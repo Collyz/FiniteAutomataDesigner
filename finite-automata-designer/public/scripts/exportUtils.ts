@@ -106,8 +106,7 @@ export function addEntryArrowComment(caller: string, _data: string, toId: string
     } else if (caller == CALLERS.LATEX ) {
         _data += `\t%<!-- EntryArrow: to=${toId}, start=(${fixed(startX, 3)},${fixed(startY, 3)}) -->\n`;
     }
-    
-     return _data;
+    return _data;
 }
 
 export function addSelfArrowComment(caller: string, _data: string, circleId: string, anchorX: number, anchorY: number, text: string) {
@@ -116,8 +115,8 @@ export function addSelfArrowComment(caller: string, _data: string, circleId: str
     } else if (caller == CALLERS.LATEX ) {
         _data += `\t%<!-- SelfArrow: circle=${circleId}, anchor=(${fixed(anchorX, 3)},${fixed(anchorY, 3)}), text=${text} -->\n`;
     } 
-    
-     return _data;
+
+    return _data;
 }
 
 export function addAlphabetComment(caller: string, _data: string, alphabet: Set<string>){
