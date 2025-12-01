@@ -88,6 +88,7 @@
         else if (caller == CALLERS.LATEX) {
             _data += `\t%<!-- EntryArrow: to=${toId}, start=(${fixed(startX, 3)},${fixed(startY, 3)}) -->\n`;
         }
+        console.log('hit the entry arrow comment function');
         return _data;
     }
     function addSelfArrowComment(caller, _data, circleId, anchorX, anchorY, text) {
@@ -907,10 +908,12 @@
         stroke() {
             if (this._points.length == 0)
                 return;
+            console.log(this.faObject);
             if (this.faObject instanceof Arrow) {
                 this._svgData = addStraightArrowComment(CALLERS.SVG, this._svgData, this.faObject.startCircle.id, this.faObject.endCircle.id, this.faObject.text);
             }
             else if (this.faObject instanceof EntryArrow) {
+                console.log('entry arrow exists');
                 const points = this.faObject.getEndPoints();
                 this._svgData = addEntryArrowComment(CALLERS.SVG, this._svgData, this.faObject.pointsToCircle.id, points.startX, points.startY);
             }
@@ -1917,6 +1920,10 @@
             exporter.faObject = arrows[arrow];
             arrows[arrow].draw(exporter);
         }
+        if (startState) {
+            exporter.faObject = startState;
+            startState.draw(exporter);
+        }
         output(exporter.toSVG(), textArea);
     }
     function saveAsLaTeX(canvas, textArea) {
@@ -1931,6 +1938,10 @@
         for (let arrow = 0; arrow < arrows.length; arrow++) {
             exporter.faObject = arrows[arrow];
             arrows[arrow].draw(exporter);
+        }
+        if (startState) {
+            exporter.faObject = startState;
+            startState.draw(exporter);
         }
         output(exporter.toLaTeX(), textArea);
     }

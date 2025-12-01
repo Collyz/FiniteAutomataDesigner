@@ -14,11 +14,11 @@
 // npm run build:canvas
 
 
-import {Circle, circles} from "./Shapes/Circle";
-import {Arrow, arrows} from "./Shapes/Arrow";
-import {SelfArrow} from "./Shapes/SelfArrow";
-import {EntryArrow, startState, setStartState} from "./Shapes/EntryArrow";
-import {TemporaryArrow} from "./Shapes/TemporaryArrow";
+import { Circle, circles} from "./Shapes/Circle";
+import { Arrow, arrows} from "./Shapes/Arrow";
+import { SelfArrow} from "./Shapes/SelfArrow";
+import { EntryArrow, startState, setStartState} from "./Shapes/EntryArrow";
+import { TemporaryArrow} from "./Shapes/TemporaryArrow";
 import { snapToPadding} from "./Shapes/draw";
 import { dfaAlgo, transitionDeterminismCheck } from "../../src/lib/dfa/dfaAlgo";
 import { alphabet, setAlphabet } from "./alphabet";
@@ -760,6 +760,12 @@ function saveAsSVG(canvas: HTMLCanvasElement, textArea: HTMLTextAreaElement) {
       arrows[arrow].draw(exporter);
     }
 
+    if (startState) {
+      exporter.faObject = startState;
+      startState.draw(exporter);
+    }
+    
+
     output(exporter.toSVG(), textArea);
 }
 
@@ -776,6 +782,10 @@ function saveAsLaTeX(canvas: HTMLCanvasElement, textArea: HTMLTextAreaElement) {
   for (let arrow = 0; arrow < arrows.length; arrow++) {
     exporter.faObject = arrows[arrow];
     arrows[arrow].draw(exporter);
+  }
+  if (startState) {
+    exporter.faObject = startState;
+    startState.draw(exporter);
   }
 
   output(exporter.toLaTeX(), textArea);
