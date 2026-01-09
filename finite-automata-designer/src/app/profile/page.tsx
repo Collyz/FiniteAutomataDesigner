@@ -1,24 +1,38 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect } from "react";
+import { User } from "@supabase/supabase-js";
+import Link from "next/link";
 
 export default function ProfilePage() {
-  const { data: session, status } = useSession();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [passwordSectionOpen, setPasswordSectionOpen] = useState(false);
+
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.replace("/login");
-    }
-  }, [status, router]);
+    async function loadUser() {
+      const { data: { user }, error } = await supabase.auth.getUser();
 
-  // Show loading while checking authentication
-  if (status === "loading") {
+      if (error || !user) {
+        router.replace("/login");
+      } else {
+        setUser(user);
+      }
+
+      setLoading(false);
+    }
+
+    loadUser();
+  }, [router, supabase]);
+
+  if (loading) {
     return (
-      <main className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <main className="min-h-screen bg-blue-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
@@ -27,80 +41,67 @@ export default function ProfilePage() {
     );
   }
 
-  // Don't render anything if not authenticated (will redirect)
-  if (status === "unauthenticated") {
-    return null;
-  }
+  if (!user) return null;
 
   return (
-    <main className="min-h-screen bg-blue-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <main className="min-h-screen bg-blue-100 py-8 flex justify-center">
+      <div className="w-full max-w-3xl px-4 space-y-6">
+
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white/70 backdrop-blur-sm rounded-lg shadow-lg p-6 text-center">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Profile</h1>
           <p className="text-gray-600">Manage your account settings and preferences</p>
         </div>
 
-        {/* Profile Information */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        {/* Account Info */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Account Information</h2>
-          
           <div className="flex items-center space-x-4 mb-6">
-            {session?.user?.image && (
-              <Image
-                height={100}
-                width={100}
-                src={session.user.image}
+            {user?.user_metadata?.avatar_url && (
+              <img
+                src={user.user_metadata.avatar_url}
                 alt="Profile picture"
                 className="w-20 h-20 rounded-full border-4 border-gray-200"
               />
             )}
             <div>
               <h3 className="text-lg font-medium text-gray-800">
-                {session?.user?.name || "User"}
+                {user?.user_metadata?.name || "User"}
               </h3>
-              <p className="text-gray-600">{session?.user?.email}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Name</label>
-              <p className="text-gray-900 px-3 py-2">
-                {session?.user?.name || "Not provided"}
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <p className="text-gray-900 px-3 py-2">
-                {session?.user?.email || "Not provided"}
-              </p>
+              <p className="text-gray-600">{user?.email}</p>
             </div>
           </div>
         </div>
 
-        {/* Account Actions */}
-        {/*
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Account Actions</h2>
-          
-          <div className="space-y-3 flex items-center justify-center">
-            <button className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              Edit Profile
-            </button>
-            
-            <button className="w-full md:w-auto px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors ml-0 md:ml-3">
-              Change Password
-            </button>
-            
-            <button className="w-full md:w-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ml-0 md:ml-3">
-              Delete Account
-            </button>
-          </div>
+        {/* Change Password */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-lg shadow-lg p-6">
+          <h2
+            className="text-xl font-semibold text-gray-800 mb-4 flex justify-between items-center cursor-pointer select-none"
+            onClick={() => setPasswordSectionOpen(!passwordSectionOpen)}
+          >
+            Change Password
+            <span className={`transition-transform ${passwordSectionOpen ? "rotate-180" : ""}`}>▼</span>
+          </h2>
+
+          {passwordSectionOpen && (
+            <div className="mt-2">
+              <p className="text-gray-600 mb-4">
+                You’ll be redirected to a secure page to update your password.
+              </p>
+
+              <Link
+                href="/reset/update-password"
+                className="inline-block px-6 py-3 bg-gray-600 text-white rounded
+                          hover:bg-black hover:shadow-lg hover:scale-105
+                          transition-transform duration-300"
+              >
+                Go to Update Password
+              </Link>
+            </div>
+          )}
+
         </div>
-        */}
       </div>
     </main>
   );
-} 
+}

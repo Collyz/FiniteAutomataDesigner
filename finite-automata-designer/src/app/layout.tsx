@@ -1,10 +1,8 @@
+// layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "../pages/api/auth/[...nextauth]";
 import "./globals.css";
-import SessionProviderWrapper from "./SessionProviderWrapper";
-import Navbar from "./Navbar";
+import Navbar from "./components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,22 +19,14 @@ export const metadata: Metadata = {
   description: "Design and experiment with DFA and NFAs",
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
+export default async function RootLayout({ children }: {
   children: React.ReactNode;
-}>) {
-  // const session = 
-  await getServerSession(authOptions);
+}) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <SessionProviderWrapper>
-          <Navbar />
-          {children}
-        </SessionProviderWrapper>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Navbar />
+        {children}
       </body>
     </html>
   );
