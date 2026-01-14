@@ -1298,7 +1298,22 @@
     }
 
     /**
-     * TransitionLabelLexer
+     * TransitionLabelInputValidator
+     *
+     * This component performs incremental, prefix-based validation of transition
+     * labels as the user types. It intentionally does NOT tokenize input or emit
+     * symbols. Instead, it enforces that every keystroke keeps the current input
+     * as a valid prefix of some symbol in the user-defined alphabet.
+     *
+     * Design rationale:
+     * - Input is committed by UI interaction (arrow deselection), not by syntax.
+     * - Invalid symbols are prevented at the point of entry, eliminating the need
+     *   for post-hoc validation or token streams.
+     * - Multi-character symbols, overlapping prefixes, and escape sequences are
+     *   naturally supported via a Trie.
+     *
+     * This design mirrors editor-style validation rather than compiler-style
+     * lexing, which better fits an interactive automata editor.
      *
      * Responsibilities:
      * - Maintain a buffer for the *current symbol* being typed
@@ -1327,7 +1342,7 @@
             console.log("Handling char:", char);
             // Always allow commas — they separate symbols
             if (char === ",") {
-                this.buffer = "";
+                this.reset();
                 console.log("Comma typed, buffer reset");
                 return true;
             }
@@ -1349,7 +1364,7 @@
          */
         handleBackspace(currentText) {
             if (currentText.length === 0) {
-                this.buffer = "";
+                this.reset();
                 return true;
             }
             const lastChar = currentText[currentText.length - 1];
@@ -1370,6 +1385,9 @@
          */
         reset() {
             this.buffer = "";
+        }
+        getBuffer() {
+            return this.buffer;
         }
         /**
          * Rebuilds buffer based on the text after backspacing a comma.
@@ -1407,7 +1425,7 @@
     // This variable is crucial for determining when to run the transitionDeterminismCheck,
     // because if the text changes on an arrow, the transitionDeterminismCheck must run.
     // If the text never changed, then no need to run the check.
-    let oldText = "";
+    // let oldText: string = "";
     let selectedObj = null; // Currently selected object
     let hightlightSelected = 'blue'; // Blue highlight for objects for regular selection
     let base = 'black'; // Black highlight for objects to indicate that they are not being selected
@@ -1475,10 +1493,14 @@
             selectedObj = mouseCollision(mouse.x, mouse.y);
             dragging = false;
             startClick = mouse;
+            console.log("Last edited arrow:", lastEditedArrow?.startCircle.text, " to ", lastEditedArrow?.endCircle.text);
+            // console.log("Old text:", oldText);
+            console.log("Last edited arrow text:", lastEditedArrow?.text);
+            console.log("Selected object: ", selectedObj instanceof Arrow || selectedObj instanceof SelfArrow ? "Arrow or SelfArrow" : "Not an Arrow or SelfArrow");
             // If the previously edited object was an Arrow or SelfArrow, AND if its text has been modified,
             // AND if the currently selected object is different from the previous edited Arrow or SelfArrow,
             // then we will run the transitionDeterminismCheck
-            if (lastEditedArrow && oldText !== lastEditedArrow.text && selectedObj !== lastEditedArrow) {
+            if (lastEditedArrow && selectedObj !== lastEditedArrow) {
                 // If the transitionDeterminismCheck returns true, that means the transition is valid.
                 // So, we set oldText equal to the new text of the arrow. Thus, this if-statement won't
                 // activate more than once, since the 2nd condition won't be fulfilled, because oldText and
@@ -1486,8 +1508,9 @@
                 if (transitionDeterminismCheck(lastEditedArrow)) {
                     // This will sort the string in ascending order and assign it to the arrow's text,
                     // which makes it more visually appealing for the user
+                    console.log("Transition determinism check passed for state ", lastEditedArrow.startCircle.id);
                     lastEditedArrow.text = lastEditedArrow.text.replace(/^[,\s]+|[,\s]+$/g, "").split(",").sort().join(",");
-                    oldText = lastEditedArrow.text;
+                    // oldText = lastEditedArrow.text;
                 }
                 // If the transitionDeterminismCheck returns false, that means the transition is not valid.
                 // So, we set oldText equal to the empty string, since the arrow's text will also have been
@@ -1495,13 +1518,15 @@
                 // activate more than once, since the 2nd condition won't be fulfilled, because oldText and
                 // the text of the lastEditedArrow will be equal
                 else {
-                    oldText = "";
+                    console.log("Transition determinism check failed for state ", lastEditedArrow.startCircle.id);
+                    // oldText = "";
                 }
             }
             // Update the previously edited object here
             if (selectedObj instanceof Arrow ||
                 selectedObj instanceof SelfArrow) {
                 lastEditedArrow = selectedObj;
+                transitionLabelInputValidator.reset();
             }
             if (selectedObj != null) {
                 if (shiftPressed && selectedObj instanceof Circle) {
@@ -1679,7 +1704,7 @@
                                 selectedObj.text += event.key;
                             }
                             else {
-                                alert(`'${event.key}' is not defined in the alphabet!`);
+                                alert(`'${transitionLabelInputValidator.getBuffer() + event.key}' is not defined in the alphabet!`);
                             }
                         }
                         // Else, the selectedObj must be Circle, which we can type anything for
