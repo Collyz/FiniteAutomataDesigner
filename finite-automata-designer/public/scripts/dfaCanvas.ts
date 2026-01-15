@@ -581,30 +581,32 @@ function attachWhenReady() {
           event.preventDefault();
 
           // Obtain the value entered
-          let newInput = inputString.value.trim();
+          // let newInput = inputString.value.trim();
 
           // Check to see if it contains anything not defined in the alphabet.
           // If it contains undefined characters, alert the user
-          let notDefined: Array<string> = [];
-          for(let char of newInput){
-            if(!alphabet.has(char)){
-              // Note to self: maybe make it so it goes through the entire string
-              // first and collects every character that is wrong? Then give an alert
-              // afterwards with every character that was wrong
-              notDefined.push(char);
-            }
-          }
+          // let notDefined: Array<string> = [];
+          // for(let char of newInput){
+          //   if(!alphabet.has(char)){
+          //     // Note to self: maybe make it so it goes through the entire string
+          //     // first and collects every character that is wrong? Then give an alert
+          //     // afterwards with every character that was wrong
+          //     notDefined.push(char);
+          //   }
+          // }
 
-          if(notDefined.length == 1){
-            alert("\'" + notDefined[0] + "\' is not in the alphabet, this input is invalid!");
-          }
-          else if(notDefined.length > 1){
-            alert("\'" + notDefined.toString() + "\' is not in the alphabet, this input is invalid!");
-          }
-          else{
-            // Run the DFA algorithm
-            dfaAlgo(newInput);
-          }
+          // if(notDefined.length == 1){
+          //   alert("\'" + notDefined[0] + "\' is not in the alphabet, this input is invalid!");
+          // }
+          // else if(notDefined.length > 1){
+          //   alert("\'" + notDefined.toString() + "\' is not in the alphabet, this input is invalid!");
+          // }
+          // else{
+          //   // Run the DFA algorithm
+          //   dfaAlgo(newInput);
+          // }
+
+          dfaAlgo(inputString.value);
           
           // Reset the input tag
           inputString.value = "";
