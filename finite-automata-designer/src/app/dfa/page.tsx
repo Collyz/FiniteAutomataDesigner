@@ -1,9 +1,43 @@
 'use client';
 import Link from "next/link";
 import Script from 'next/script';
+import { useEffect, useState } from "react";
 
 
 export default function DFAPage() {
+
+    const [hasMultiCharAlphabet, setHasMultiCharAlphabet] = useState(false);
+    const [alphabetInput, setAlphabetInput] = useState("");
+    const [alphabetDraft, setAlphabetDraft] = useState("");
+
+    useEffect(() => {
+        let multiCharDetected = false;
+        
+        const alphabet = parseAlphabetInput(alphabetInput);
+
+        for(const element of alphabet){
+            if(element.length > 1){
+                console.log("Element: ", element, true);
+                multiCharDetected = true;
+                break;
+            }
+        }
+
+        setHasMultiCharAlphabet(multiCharDetected);
+        console.log(multiCharDetected);
+    }, [alphabetInput]);
+
+    function parseAlphabetInput(input: string): Set<string> {
+        return new Set(
+            input
+                // Split by commas
+                .split(',')
+                // Trim whitespace from each element
+                .map(elem => elem.trim())
+                // Remove empty strings
+                .filter(elem => elem !== ''));
+    }
+
     return (
       <main className="min-h-screen bg-blue-100 flex flex-col items-center">
         {/* DFA title at the top */}
@@ -188,7 +222,7 @@ export default function DFAPage() {
                     <li><p className="font-semibold inline">Run DFA: </p>Type an input string containing only the characters from your alphabet. Press Enter to submit</li>
                 </ul>
             </div>
-            <div id='inputDiv'className="flex flex-col self-center">
+            <div id='inputDiv' className="flex flex-col self-center w-full max-w-md">
                 {/* Textbox for inputting strings */}
                 <label htmlFor="inputString" className="block mb-1 text-gray-700 text-xl font-bold">
                     Input:
@@ -201,10 +235,23 @@ export default function DFAPage() {
                     // Loose focus after you press enter
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                        e.currentTarget.blur();
+                            e.currentTarget.blur();
                         }
                     }}
                 />
+                <div className="min-h-[3rem]">
+                    {hasMultiCharAlphabet && (
+                        <div className="w-full rounded border border-red-300 bg-red-100 px-3 py-2">
+                            <p className="text-sm text-red-700 font-semibold">
+                                Multi-character element detected in alphabet. Please separate elements
+                                in your input string with commas or spaces.
+                            </p>
+                        </div>
+                    )}
+                </div>
+                    
+
+
                 {/* Textbox for inputting the alphabet */}
                 <label id="alphabetLabel" htmlFor="alphabet" className="block mb-1 text-gray-700 text-xl font-bold">
                     Alphabet: {"{0,1}"}
@@ -214,10 +261,12 @@ export default function DFAPage() {
                     type="text"
                     placeholder="Enter an alphabet..."
                     className="w-full px-4 py-2 border border-gray-400 rounded shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    onChange={(e) => setAlphabetDraft(e.target.value)}
                     // Loose focus after you press enter
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                        e.currentTarget.blur();
+                            e.currentTarget.blur();
+                            setAlphabetInput(alphabetDraft.trim());
                         }
                     }}
                 />
