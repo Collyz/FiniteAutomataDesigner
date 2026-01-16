@@ -8,33 +8,50 @@ export default function DFAPage() {
 
     const [hasMultiCharAlphabet, setHasMultiCharAlphabet] = useState(false);
     const [alphabetInput, setAlphabetInput] = useState("");
-    const [alphabetDraft, setAlphabetDraft] = useState("");
+    // const [alphabetDraft, setAlphabetDraft] = useState("");
 
     useEffect(() => {
-        let multiCharDetected = false;
-        
-        const alphabet = parseAlphabetInput(alphabetInput);
+        const handler = (event: Event) => {
+            const customEvent = event as CustomEvent<{alphabet: string[]}>;
+            const symbols = customEvent.detail.alphabet;
 
-        for(const element of alphabet){
-            if(element.length > 1){
-                multiCharDetected = true;
-                break;
-            }
+            const alphabetString = symbols.join(',');
+            setAlphabetInput(alphabetString);
+
+            const hasMulti = symbols.some(symbol => symbol.length > 1);
+            setHasMultiCharAlphabet(hasMulti);
         }
 
-        setHasMultiCharAlphabet(multiCharDetected);
+        window.addEventListener("dfaAlphabetUpdated", handler);
+
+        return () => {
+            window.removeEventListener("dfaAlphabetUpdated", handler);
+        }
+
+        // let multiCharDetected = false;
+        
+        // const alphabet = parseAlphabetInput(alphabetInput);
+
+        // for(const element of alphabet){
+        //     if(element.length > 1){
+        //         multiCharDetected = true;
+        //         break;
+        //     }
+        // }
+
+        // setHasMultiCharAlphabet(multiCharDetected);
     }, [alphabetInput]);
 
-    function parseAlphabetInput(input: string): Set<string> {
-        return new Set(
-            input
-                // Split by commas
-                .split(',')
-                // Trim whitespace from each element
-                .map(elem => elem.trim())
-                // Remove empty strings
-                .filter(elem => elem !== ''));
-    }
+    // function parseAlphabetInput(input: string): Set<string> {
+    //     return new Set(
+    //         input
+    //             // Split by commas
+    //             .split(',')
+    //             // Trim whitespace from each element
+    //             .map(elem => elem.trim())
+    //             // Remove empty strings
+    //             .filter(elem => elem !== ''));
+    // }
 
 
     return (
@@ -260,12 +277,12 @@ export default function DFAPage() {
                     type="text"
                     placeholder="Enter an alphabet..."
                     className="w-full px-4 py-2 border border-gray-400 rounded shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    onChange={(e) => setAlphabetDraft(e.target.value)}
+                    //onChange={(e) => setAlphabetDraft(e.target.value)}
                     // Loose focus after you press enter
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
                             e.currentTarget.blur();
-                            setAlphabetInput(alphabetDraft.trim());
+                            //setAlphabetInput(alphabetDraft.trim());
                         }
                     }}
                 />
