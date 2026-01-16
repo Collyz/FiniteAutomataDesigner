@@ -55,7 +55,7 @@ export function transitionDeterminismCheck(lastEditedArrow: Arrow | SelfArrow | 
     const startCircOutArrows = lastEditedArrow.startCircle.outArrows;
     
     // Keep track of all invalid transitions to be printed to the user later
-    const duplicateTransitions: Array<string> = [];
+    const existingTransitions: Array<string> = [];
 
     // You iterate through every arrow that goes outwards from this current node
     for(const arrow of startCircOutArrows){
@@ -72,23 +72,24 @@ export function transitionDeterminismCheck(lastEditedArrow: Arrow | SelfArrow | 
           // If a transition already exists, then it fails determinism
           if(newTransition === oldTransition){
             lastEditedArrow.text = "";
-            duplicateTransitions.push(newTransition);
+            existingTransitions.push(newTransition);
           }
         }
       }
     }
 
-    if(duplicateTransitions.length == 1){
-      alert("This translation violates determinism since \'" + duplicateTransitions[0] + "\' is already present for an outgoing arrow of this node");
+    if(existingTransitions.length == 1){
+      alert("This translation violates determinism since \'" + existingTransitions[0] + "\' is already present for an outgoing arrow of this node");
       return false;
     }
-    else if(duplicateTransitions.length > 1){
-      alert("This translation violates determinism since \'" + duplicateTransitions.toString() + "\' are already present for an outgoing arrows of this node");
+    else if(existingTransitions.length > 1){
+      alert("This translation violates determinism since \'" + existingTransitions.toString() + "\' are already present for an outgoing arrows of this node");
       return false;
     }
     else{
       // Update the transition with the new one
       lastEditedArrow.transition = new Set(newTransitions);
+      lastEditedArrow.text = lastEditedArrow.transition.values().toArray().join(",");
       return true;
     }
 }
