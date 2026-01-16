@@ -21,11 +21,10 @@ import { EntryArrow, startState, setStartState} from "./Shapes/EntryArrow";
 import { TemporaryArrow} from "./Shapes/TemporaryArrow";
 import { snapToPadding} from "./Shapes/draw";
 import { dfaAlgo, transitionDeterminismCheck } from "../../src/lib/dfa/dfaAlgo";
-import { alphabet, setAlphabet } from "./alphabet";
+import { alphabet, setAlphabet, transitionLabelInputValidator } from "./alphabet";
 import { ExportAsSVG } from "./exporting/ExportAsSVG";
 import { ExportAsLaTeX } from "./exporting/ExportAsLaTeX";
 import { Importer } from "./importing/importer";
-import { TransitionLabelInputValidator } from "@/lib/validation/TransitionLabelInputValidator";
 
 // The previously edited object, which is determined by the object that was last
 // under typing mode.
@@ -48,7 +47,6 @@ let dragging = false; // True dragging objects is enabled, false otherwise
 let shiftPressed = false; // True if shift is pressed, false otherwise
 let startClick: {x: number, y: number} | null = null;
 let tempArrow: TemporaryArrow | Arrow | SelfArrow | EntryArrow | null = null; // A new arrow being created
-let transitionLabelInputValidator: TransitionLabelInputValidator = new TransitionLabelInputValidator(alphabet); // Input validator for transition labels
 
 // Returns true if no input or focusable element is active meaning the document body has focus.
 function canvasHasFocus() {
@@ -639,8 +637,6 @@ function attachWhenReady() {
           })
         );
           
-          transitionLabelInputValidator = new TransitionLabelInputValidator(alphabet);
-
           console.log(alphabet);
 
           alphabetInput.value = ""; 
