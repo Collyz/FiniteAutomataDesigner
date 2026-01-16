@@ -13,8 +13,13 @@ import { parseInputString } from "../input/InputStringLexer";
 // with other transitions going out from that state? If it does,
 // then it fails determinism.
 export function transitionDeterminismCheck(lastEditedArrow: Arrow | SelfArrow | null){
-    if(lastEditedArrow === null || lastEditedArrow.text === ""){
+    if(lastEditedArrow === null){
       return false;
+    }
+    if(lastEditedArrow.text === ""){
+      lastEditedArrow.transition = new Set();
+      console.log("Empty transition, accepted");
+      return true;
     }
 
     // Leaving this here commented-out, for debugging purposes if the
