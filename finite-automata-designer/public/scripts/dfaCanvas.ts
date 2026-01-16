@@ -621,10 +621,16 @@ function attachWhenReady() {
           event.preventDefault();
           console.log("Submitting alphabet:", alphabetInput.value);
 
+          const normalized = alphabetInput.value
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+
           // Obtain the input and update the alphabet variable.
           // The regex also removes any trailing/leading commas and whitespace
-          const newAlphabet = new Set(alphabetInput.value.replace(/^[,\s]+|[,\s]+$/g, "").split(","));
+          const newAlphabet = new Set(normalized);
           setAlphabet(newAlphabet);
+          
           transitionLabelInputValidator = new TransitionLabelInputValidator(alphabet);
 
           console.log(alphabet);
