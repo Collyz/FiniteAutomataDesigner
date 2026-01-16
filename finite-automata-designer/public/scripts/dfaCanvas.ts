@@ -21,7 +21,7 @@ import { EntryArrow, startState, setStartState} from "./Shapes/EntryArrow";
 import { TemporaryArrow} from "./Shapes/TemporaryArrow";
 import { snapToPadding} from "./Shapes/draw";
 import { dfaAlgo, transitionDeterminismCheck } from "../../src/lib/dfa/dfaAlgo";
-import { alphabet, setAlphabet } from "./alphabet";
+import { alphabet, setAlphabet, transitionLabelInputValidator } from "./alphabet";
 import { ExportAsSVG } from "./exporting/ExportAsSVG";
 import { ExportAsLaTeX } from "./exporting/ExportAsLaTeX";
 import { Importer } from "./importing/importer";
@@ -38,7 +38,7 @@ let lastEditedArrow: Arrow | SelfArrow | null = null;
 // This variable is crucial for determining when to run the transitionDeterminismCheck,
 // because if the text changes on an arrow, the transitionDeterminismCheck must run.
 // If the text never changed, then no need to run the check.
-let oldText: string = "";
+// let oldText: string = "";
 
 let selectedObj: Circle | EntryArrow | Arrow | SelfArrow | null = null; // Currently selected object
 let hightlightSelected = 'blue'; // Blue highlight for objects for regular selection
@@ -120,10 +120,14 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
     dragging = false;
     startClick = mouse;
 
+    // console.log("Last edited arrow:", lastEditedArrow?.startCircle.text, " to ", lastEditedArrow?.endCircle.text);
+    // console.log("Last edited arrow text:", lastEditedArrow?.text);
+    // console.log("Selected object: " , selectedObj instanceof Arrow || selectedObj instanceof SelfArrow ? "Arrow or SelfArrow" : "Not an Arrow or SelfArrow");
+
     // If the previously edited object was an Arrow or SelfArrow, AND if its text has been modified,
     // AND if the currently selected object is different from the previous edited Arrow or SelfArrow,
     // then we will run the transitionDeterminismCheck
-    if(lastEditedArrow && oldText !== lastEditedArrow.text && selectedObj !== lastEditedArrow){
+    if(lastEditedArrow && selectedObj !== lastEditedArrow){
       
       // If the transitionDeterminismCheck returns true, that means the transition is valid.
       // So, we set oldText equal to the new text of the arrow. Thus, this if-statement won't
@@ -132,8 +136,9 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
       if(transitionDeterminismCheck(lastEditedArrow)){
         // This will sort the string in ascending order and assign it to the arrow's text,
         // which makes it more visually appealing for the user
+        // console.log("Transition determinism check passed for state ", lastEditedArrow.startCircle.id);
         lastEditedArrow.text = lastEditedArrow.text.replace(/^[,\s]+|[,\s]+$/g, "").split(",").sort().join(",");
-        oldText = lastEditedArrow.text;
+
       }
       // If the transitionDeterminismCheck returns false, that means the transition is not valid.
       // So, we set oldText equal to the empty string, since the arrow's text will also have been
@@ -141,7 +146,8 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
       // activate more than once, since the 2nd condition won't be fulfilled, because oldText and
       // the text of the lastEditedArrow will be equal
       else{
-        oldText = "";
+        console.log("Transition determinism check failed for state ", lastEditedArrow.startCircle.id);
+
       }
     }
 
@@ -149,6 +155,7 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
     if(selectedObj instanceof Arrow ||
       selectedObj instanceof SelfArrow){
       lastEditedArrow = selectedObj;
+      transitionLabelInputValidator.setBuffer(selectedObj.text);
     }
 
 
@@ -310,28 +317,30 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
           // If the currently selected object is an Arrow or SelfArrow,
           // then save the old text of the object so you can determine later
           // if a determinism check needs to be ran
-          if((selectedObj instanceof Arrow || selectedObj instanceof SelfArrow)){
-            oldText = selectedObj.text;
+          if (selectedObj instanceof Arrow || selectedObj instanceof SelfArrow) {
+            if (transitionLabelInputValidator.handleBackspace(selectedObj.text)) {
+              selectedObj.text = selectedObj.text.slice(0, -1);
+            }
+          } 
+          else {
+            selectedObj.text = selectedObj.text.slice(0, -1);
           }
-          selectedObj.text = selectedObj.text.substring(0, selectedObj.text.length - 1);
           draw();
         }
+
+        
         // We will only allow characters of length 1 to be typed on the arrows
-        if(event.key.length === 1){
+        else if(event.key.length === 1){
           if((selectedObj instanceof Arrow || selectedObj instanceof SelfArrow)){
 
             // If the current object that is being typed on is an Arrow or SelfArrow,
             // then we will check if the character being typed is defined in the alphabet.
             // If not, we will alert the user.
-            if(alphabet.has(event.key) || event.key === ','){
-              // Store the text of the object before it changes, since
-              // the 'text' attribute of the object will be directly modified
-              // by this keydown listener
-              oldText = selectedObj.text;
+            
+            if (transitionLabelInputValidator.handleChar(event.key)) {
               selectedObj.text += event.key;
-            }
-            else{
-              alert("\'" + event.key + "\' is not defined in the alphabet!");
+            } else {
+              alert(`'${transitionLabelInputValidator.getBuffer() + event.key}' is not defined in the alphabet!`);
             }
           }
           // Else, the selectedObj must be Circle, which we can type anything for
@@ -557,31 +566,7 @@ function attachWhenReady() {
         if (event.key === "Enter") {
           event.preventDefault();
 
-          // Obtain the value entered
-          let newInput = inputString.value.trim();
-
-          // Check to see if it contains anything not defined in the alphabet.
-          // If it contains undefined characters, alert the user
-          let notDefined: Array<string> = [];
-          for(let char of newInput){
-            if(!alphabet.has(char)){
-              // Note to self: maybe make it so it goes through the entire string
-              // first and collects every character that is wrong? Then give an alert
-              // afterwards with every character that was wrong
-              notDefined.push(char);
-            }
-          }
-
-          if(notDefined.length == 1){
-            alert("\'" + notDefined[0] + "\' is not in the alphabet, this input is invalid!");
-          }
-          else if(notDefined.length > 1){
-            alert("\'" + notDefined.toString() + "\' is not in the alphabet, this input is invalid!");
-          }
-          else{
-            // Run the DFA algorithm
-            dfaAlgo(newInput);
-          }
+          dfaAlgo(inputString.value);
           
           // Reset the input tag
           inputString.value = "";
@@ -596,11 +581,24 @@ function attachWhenReady() {
           event.preventDefault();
           console.log("Submitting alphabet:", alphabetInput.value);
 
+          const normalized = alphabetInput.value
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+
           // Obtain the input and update the alphabet variable.
           // The regex also removes any trailing/leading commas and whitespace
-          const newAlphabet = new Set(alphabetInput.value.replace(/^[,\s]+|[,\s]+$/g, "").split(","));
+          const newAlphabet = new Set(normalized);
           setAlphabet(newAlphabet);
-
+          
+          
+          window.dispatchEvent(new CustomEvent("dfaAlphabetUpdated", {
+            detail: {
+              alphabet: Array.from(newAlphabet)
+            }
+          })
+        );
+          
           console.log(alphabet);
 
           alphabetInput.value = ""; 
@@ -825,6 +823,17 @@ function importHelper(canvas: HTMLCanvasElement | null,
     }
     if(alphabetLabel){
       alphabetLabel.textContent = "Alphabet: {"+Array.from(alphabet).join(",")+"}";
+
+      // This event notifies the DFA page that the alphabet has been updated.
+      // This lets the DFA page know if it needs to check for multi-character
+      // elements in the alphabet, in which case it will show a disclaimer to
+      // the user on how to submit input strings properly.
+      window.dispatchEvent(new CustomEvent("dfaAlphabetUpdated", {
+            detail: {
+              alphabet: Array.from(alphabet)
+            }
+        })
+      );
     }
   }
 }

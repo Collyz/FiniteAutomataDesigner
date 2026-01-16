@@ -3,6 +3,7 @@ import { alphabet } from "../../../public/scripts/alphabet";
 import { Arrow } from "../../../public/scripts/Shapes/Arrow";
 import { SelfArrow } from "../../../public/scripts/Shapes/SelfArrow";
 import { startState } from "../../../public/scripts/Shapes/EntryArrow";
+import { parseInputString } from "../input/InputStringLexer";
 
 // I haven't figured out how to stop compiling the imports into JS, so here's a command
 // to get rid of them once you cd into their directory lol:
@@ -12,8 +13,13 @@ import { startState } from "../../../public/scripts/Shapes/EntryArrow";
 // with other transitions going out from that state? If it does,
 // then it fails determinism.
 export function transitionDeterminismCheck(lastEditedArrow: Arrow | SelfArrow | null){
-    if(lastEditedArrow === null || lastEditedArrow.text === ""){
+    if(lastEditedArrow === null){
       return false;
+    }
+    if(lastEditedArrow.text === ""){
+      lastEditedArrow.transition = new Set();
+      console.log("Empty transition, accepted");
+      return true;
     }
 
     // Leaving this here commented-out, for debugging purposes if the
@@ -54,7 +60,7 @@ export function transitionDeterminismCheck(lastEditedArrow: Arrow | SelfArrow | 
     const startCircOutArrows = lastEditedArrow.startCircle.outArrows;
     
     // Keep track of all invalid transitions to be printed to the user later
-    const duplicateTransitions: Array<string> = [];
+    const existingTransitions: Array<string> = [];
 
     // You iterate through every arrow that goes outwards from this current node
     for(const arrow of startCircOutArrows){
@@ -71,23 +77,24 @@ export function transitionDeterminismCheck(lastEditedArrow: Arrow | SelfArrow | 
           // If a transition already exists, then it fails determinism
           if(newTransition === oldTransition){
             lastEditedArrow.text = "";
-            duplicateTransitions.push(newTransition);
+            existingTransitions.push(newTransition);
           }
         }
       }
     }
 
-    if(duplicateTransitions.length == 1){
-      alert("This translation violates determinism since \'" + duplicateTransitions[0] + "\' is already present for an outgoing arrow of this node");
+    if(existingTransitions.length == 1){
+      alert("This translation violates determinism since \'" + existingTransitions[0] + "\' is already present for an outgoing arrow of this node");
       return false;
     }
-    else if(duplicateTransitions.length > 1){
-      alert("This translation violates determinism since \'" + duplicateTransitions.toString() + "\' are already present for an outgoing arrows of this node");
+    else if(existingTransitions.length > 1){
+      alert("This translation violates determinism since \'" + existingTransitions.toString() + "\' are already present for an outgoing arrows of this node");
       return false;
     }
     else{
       // Update the transition with the new one
       lastEditedArrow.transition = new Set(newTransitions);
+      lastEditedArrow.text = lastEditedArrow.transition.values().toArray().join(",");
       return true;
     }
 }
@@ -183,14 +190,13 @@ export function dfaAlgo(input: string){
     return false;
   }
 
-  // First, we make sure the input string is legal. If it contains
-	// characters not defined in the alphabet, then we return false immediately.
-  for(const char of input){
-    if(!alphabet.has(char)){
-      alert("Input contains \'" + char + "\', which is not in the alphabet");
-      return false;
-    }
+  const parseResult = parseInputString(input, alphabet);
+
+  if (!parseResult.success) {
+    alert(parseResult.error);
+    return false;
   }
+  const tokens = parseResult.tokens;
 
   // This "curr" variable will be used to traverse over the whole DFA
   let curr: Circle = startState.pointsToCircle;
@@ -201,7 +207,7 @@ export function dfaAlgo(input: string){
   }
 
   // We begin traversing the input string.
-  for(const char of input){
+  for(const char of tokens){
 
     // We go through every outgoing arrow for the 
 		// current state.
@@ -230,14 +236,14 @@ export function dfaAlgo(input: string){
   // If the final state that we arrived at is the end state,
 	// that means the string was accepted.
   if(curr.isAccept){
-    alert("The string, \"" + input + "\", was accepted!");
+    alert("The string, \"" + tokens.toString() + "\", was accepted!");
     //console.log("Accepted!");
     return true;
   }
   // Else, the final state we arrived at is not the end state,
 	// which means the string was rejected.
   else{
-    alert("The string, \"" + input + "\", was rejected!");
+    alert("The string, \"" + tokens.toString() + "\", was rejected!");
     //console.log("Rejected!");
     return false;
   }
