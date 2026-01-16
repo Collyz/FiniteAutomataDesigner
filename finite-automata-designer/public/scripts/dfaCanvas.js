@@ -613,6 +613,88 @@
         alphabet = newAlphabet;
     }
 
+    // Main function that converts a row input string into
+    // tokens according to the alphabet and delimiter rules.
+    function parseInputString(input, alphabet) {
+        // Remove leading and trailing whitespace from the input
+        const trimmed = input.trim();
+        if (trimmed.length === 0) {
+            return { success: true, tokens: [] };
+        }
+        // Check for presence of commas
+        const hasComma = trimmed.includes(",");
+        // Check if the input contains ANY whitespace characters.
+        // \s matches spaces, tabs, and newlines.
+        const hasWhitespace = /\s/.test(trimmed);
+        // If both commas and spaces are used, reject the input
+        // to avoid ambiguous tokenization.
+        if (hasComma && hasWhitespace) {
+            return {
+                success: false,
+                error: "Input string contains both commas and whitespace as separators. Please use only one type of separator.",
+            };
+        }
+        // This array will store the final list of tokens
+        let tokens = [];
+        // Case 1: Comma-separated input
+        if (hasComma) {
+            // Split the string at commas
+            tokens = trimmed
+                .split(",")
+                // Remove
+                .map((s) => s.trim())
+                // Remove empty tokens (e.g., consecutive commas like ",,")
+                .filter(Boolean);
+        }
+        // Case 2: Whitespace-separated input
+        else if (hasWhitespace) {
+            // Split the string at any whitespace character(s)
+            tokens = trimmed
+                .split(/\s+/)
+                // Remove empty tokens (in case of multiple spaces)
+                .filter(Boolean);
+        }
+        // Case 3: No separators, treat each character as a token
+        else {
+            // Check if all alphabet symbols are single characters
+            const allSingleChar = [...alphabet].every((sym) => sym.length === 1);
+            // If multiple-character symbols exist in the alphabet,
+            // this input is ambiguous without separators.
+            if (!allSingleChar) {
+                return {
+                    success: false,
+                    error: "Input string must separate symbols with commas or spaces."
+                };
+            }
+            // Split the input into individual characters
+            tokens = trimmed.split("");
+        }
+        let notDefined = [];
+        // Validate that each token is in the alphabet
+        for (const token of tokens) {
+            // If a token is not in the alphabet, return an error
+            if (!alphabet.has(token)) {
+                notDefined.push(token);
+            }
+        }
+        if (notDefined.length == 1) {
+            return {
+                success: false,
+                error: `Symbol '${notDefined[0]}' is not in the alphabet. This input is invalid.`,
+            };
+        }
+        else if (notDefined.length > 1) {
+            return {
+                success: false,
+                error: `Symbols '${notDefined.toString()}' are not in the alphabet. This input is invalid.`,
+            };
+        }
+        else {
+            // If everything is valid, return the list of tokens
+            return { success: true, tokens };
+        }
+    }
+
     // I haven't figured out how to stop compiling the imports into JS, so here's a command
     // to get rid of them once you cd into their directory lol:
     // rm alphabet.js && rm arrow.js && rm circle.js && rm draw.js && rm EntryArrow.js && rm SelfArrow.js
@@ -654,7 +736,7 @@
         // Check the outArrows of the initial node
         const startCircOutArrows = lastEditedArrow.startCircle.outArrows;
         // Keep track of all invalid transitions to be printed to the user later
-        const duplicateTransitions = [];
+        const existingTransitions = [];
         // You iterate through every arrow that goes outwards from this current node
         for (const arrow of startCircOutArrows) {
             const oldTransitions = arrow.transition;
@@ -667,22 +749,23 @@
                     // If a transition already exists, then it fails determinism
                     if (newTransition === oldTransition) {
                         lastEditedArrow.text = "";
-                        duplicateTransitions.push(newTransition);
+                        existingTransitions.push(newTransition);
                     }
                 }
             }
         }
-        if (duplicateTransitions.length == 1) {
-            alert("This translation violates determinism since \'" + duplicateTransitions[0] + "\' is already present for an outgoing arrow of this node");
+        if (existingTransitions.length == 1) {
+            alert("This translation violates determinism since \'" + existingTransitions[0] + "\' is already present for an outgoing arrow of this node");
             return false;
         }
-        else if (duplicateTransitions.length > 1) {
-            alert("This translation violates determinism since \'" + duplicateTransitions.toString() + "\' are already present for an outgoing arrows of this node");
+        else if (existingTransitions.length > 1) {
+            alert("This translation violates determinism since \'" + existingTransitions.toString() + "\' are already present for an outgoing arrows of this node");
             return false;
         }
         else {
             // Update the transition with the new one
             lastEditedArrow.transition = new Set(newTransitions);
+            lastEditedArrow.text = lastEditedArrow.transition.values().toArray().join(",");
             return true;
         }
     }
@@ -767,12 +850,18 @@
         }
         // First, we make sure the input string is legal. If it contains
         // characters not defined in the alphabet, then we return false immediately.
-        for (const char of input) {
-            if (!alphabet.has(char)) {
-                alert("Input contains \'" + char + "\', which is not in the alphabet");
-                return false;
-            }
+        // for(const char of input){
+        //   if(!alphabet.has(char)){
+        //     alert("Input contains \'" + char + "\', which is not in the alphabet");
+        //     return false;
+        //   }
+        // }
+        const parseResult = parseInputString(input, alphabet);
+        if (!parseResult.success) {
+            alert(parseResult.error);
+            return false;
         }
+        const tokens = parseResult.tokens;
         // This "curr" variable will be used to traverse over the whole DFA
         let curr = startState.pointsToCircle;
         // We check if the DFA has been defined correctly. If not, then return false.
@@ -780,7 +869,7 @@
             return false;
         }
         // We begin traversing the input string.
-        for (const char of input) {
+        for (const char of tokens) {
             // We go through every outgoing arrow for the 
             // current state.
             const currOutArrows = curr.outArrows;
@@ -802,14 +891,14 @@
         // If the final state that we arrived at is the end state,
         // that means the string was accepted.
         if (curr.isAccept) {
-            alert("The string, \"" + input + "\", was accepted!");
+            alert("The string, \"" + tokens.toString() + "\", was accepted!");
             //console.log("Accepted!");
             return true;
         }
         // Else, the final state we arrived at is not the end state,
         // which means the string was rejected.
         else {
-            alert("The string, \"" + input + "\", was rejected!");
+            alert("The string, \"" + tokens.toString() + "\", was rejected!");
             //console.log("Rejected!");
             return false;
         }
@@ -1905,28 +1994,29 @@
                     if (event.key === "Enter") {
                         event.preventDefault();
                         // Obtain the value entered
-                        let newInput = inputString.value.trim();
+                        // let newInput = inputString.value.trim();
                         // Check to see if it contains anything not defined in the alphabet.
                         // If it contains undefined characters, alert the user
-                        let notDefined = [];
-                        for (let char of newInput) {
-                            if (!alphabet.has(char)) {
-                                // Note to self: maybe make it so it goes through the entire string
-                                // first and collects every character that is wrong? Then give an alert
-                                // afterwards with every character that was wrong
-                                notDefined.push(char);
-                            }
-                        }
-                        if (notDefined.length == 1) {
-                            alert("\'" + notDefined[0] + "\' is not in the alphabet, this input is invalid!");
-                        }
-                        else if (notDefined.length > 1) {
-                            alert("\'" + notDefined.toString() + "\' is not in the alphabet, this input is invalid!");
-                        }
-                        else {
-                            // Run the DFA algorithm
-                            dfaAlgo(newInput);
-                        }
+                        // let notDefined: Array<string> = [];
+                        // for(let char of newInput){
+                        //   if(!alphabet.has(char)){
+                        //     // Note to self: maybe make it so it goes through the entire string
+                        //     // first and collects every character that is wrong? Then give an alert
+                        //     // afterwards with every character that was wrong
+                        //     notDefined.push(char);
+                        //   }
+                        // }
+                        // if(notDefined.length == 1){
+                        //   alert("\'" + notDefined[0] + "\' is not in the alphabet, this input is invalid!");
+                        // }
+                        // else if(notDefined.length > 1){
+                        //   alert("\'" + notDefined.toString() + "\' is not in the alphabet, this input is invalid!");
+                        // }
+                        // else{
+                        //   // Run the DFA algorithm
+                        //   dfaAlgo(newInput);
+                        // }
+                        dfaAlgo(inputString.value);
                         // Reset the input tag
                         inputString.value = "";
                     }
@@ -1938,10 +2028,19 @@
                     if (event.key === "Enter") {
                         event.preventDefault();
                         console.log("Submitting alphabet:", alphabetInput.value);
+                        const normalized = alphabetInput.value
+                            .split(',')
+                            .map(s => s.trim())
+                            .filter(s => s.length > 0);
                         // Obtain the input and update the alphabet variable.
                         // The regex also removes any trailing/leading commas and whitespace
-                        const newAlphabet = new Set(alphabetInput.value.replace(/^[,\s]+|[,\s]+$/g, "").split(","));
+                        const newAlphabet = new Set(normalized);
                         setAlphabet(newAlphabet);
+                        window.dispatchEvent(new CustomEvent("dfaAlphabetUpdated", {
+                            detail: {
+                                alphabet: Array.from(newAlphabet)
+                            }
+                        }));
                         transitionLabelInputValidator = new TransitionLabelInputValidator(alphabet);
                         console.log(alphabet);
                         alphabetInput.value = "";
@@ -2136,6 +2235,15 @@
             }
             if (alphabetLabel) {
                 alphabetLabel.textContent = "Alphabet: {" + Array.from(alphabet).join(",") + "}";
+                // This event notifies the DFA page that the alphabet has been updated.
+                // This lets the DFA page know if it needs to check for multi-character
+                // elements in the alphabet, in which case it will show a disclaimer to
+                // the user on how to submit input strings properly.
+                window.dispatchEvent(new CustomEvent("dfaAlphabetUpdated", {
+                    detail: {
+                        alphabet: Array.from(alphabet)
+                    }
+                }));
             }
         }
     }
