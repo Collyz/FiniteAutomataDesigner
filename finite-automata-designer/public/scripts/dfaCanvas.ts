@@ -158,7 +158,7 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
     if(selectedObj instanceof Arrow ||
       selectedObj instanceof SelfArrow){
       lastEditedArrow = selectedObj;
-      transitionLabelInputValidator.reset();
+      transitionLabelInputValidator.setBuffer(selectedObj.text);
     }
 
 
