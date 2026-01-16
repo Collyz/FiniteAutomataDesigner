@@ -631,6 +631,14 @@ function attachWhenReady() {
           const newAlphabet = new Set(normalized);
           setAlphabet(newAlphabet);
           
+          
+          window.dispatchEvent(new CustomEvent("dfaAlphabetUpdated", {
+            detail: {
+              alphabet: Array.from(newAlphabet)
+            }
+          })
+        );
+          
           transitionLabelInputValidator = new TransitionLabelInputValidator(alphabet);
 
           console.log(alphabet);
@@ -857,6 +865,17 @@ function importHelper(canvas: HTMLCanvasElement | null,
     }
     if(alphabetLabel){
       alphabetLabel.textContent = "Alphabet: {"+Array.from(alphabet).join(",")+"}";
+
+      // This event notifies the DFA page that the alphabet has been updated.
+      // This lets the DFA page know if it needs to check for multi-character
+      // elements in the alphabet, in which case it will show a disclaimer to
+      // the user on how to submit input strings properly.
+      window.dispatchEvent(new CustomEvent("dfaAlphabetUpdated", {
+            detail: {
+              alphabet: Array.from(alphabet)
+            }
+        })
+      );
     }
   }
 }
