@@ -812,15 +812,28 @@
             // Check if all alphabet symbols are single characters
             const allSingleChar = [...alphabet].every((sym) => sym.length === 1);
             // If multiple-character symbols exist in the alphabet,
-            // this input is ambiguous without separators.
+            // check to see if the input can form valid symbols.
+            // This handles the edge case where the input only
+            // contains one element, which also happens to be
+            // a multi-character symbol.
             if (!allSingleChar) {
-                return {
-                    success: false,
-                    error: "Input string must separate symbols with commas or spaces."
-                };
+                transitionLabelInputValidator.reset();
+                // Validate the entire input as a single token
+                for (const char of trimmed) {
+                    if (!transitionLabelInputValidator.handleChar(char)) {
+                        return {
+                            success: false,
+                            error: `The element '${trimmed}' is not in the alphabet. This input is invalid. Please check if you need to use spaces or commas between symbols in your input.`,
+                        };
+                    }
+                }
+                tokens.push(trimmed);
+                transitionLabelInputValidator.reset();
             }
-            // Split the input into individual characters
-            tokens = trimmed.split("");
+            else {
+                // Split the input into individual characters
+                tokens = trimmed.split("");
+            }
         }
         let notDefined = [];
         // Validate that each token is in the alphabet
