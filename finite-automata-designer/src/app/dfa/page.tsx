@@ -17,14 +17,12 @@ export default function DFAPage() {
 
         for(const element of alphabet){
             if(element.length > 1){
-                console.log("Element: ", element, true);
                 multiCharDetected = true;
                 break;
             }
         }
 
         setHasMultiCharAlphabet(multiCharDetected);
-        console.log(multiCharDetected);
     }, [alphabetInput]);
 
     function parseAlphabetInput(input: string): Set<string> {
@@ -37,6 +35,7 @@ export default function DFAPage() {
                 // Remove empty strings
                 .filter(elem => elem !== ''));
     }
+
 
     return (
       <main className="min-h-screen bg-blue-100 flex flex-col items-center">
