@@ -190,15 +190,6 @@ export function dfaAlgo(input: string){
     return false;
   }
 
-  // First, we make sure the input string is legal. If it contains
-	// characters not defined in the alphabet, then we return false immediately.
-  // for(const char of input){
-  //   if(!alphabet.has(char)){
-  //     alert("Input contains \'" + char + "\', which is not in the alphabet");
-  //     return false;
-  //   }
-  // }
-
   const parseResult = parseInputString(input, alphabet);
 
   if (!parseResult.success) {
