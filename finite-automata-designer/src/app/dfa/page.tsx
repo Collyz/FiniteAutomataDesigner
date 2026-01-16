@@ -8,9 +8,10 @@ export default function DFAPage() {
 
     const [hasMultiCharAlphabet, setHasMultiCharAlphabet] = useState(false);
     const [alphabetInput, setAlphabetInput] = useState("");
-    // const [alphabetDraft, setAlphabetDraft] = useState("");
 
     useEffect(() => {
+
+        // This will listen for alphabet updates from the canvas script
         const handler = (event: Event) => {
             const customEvent = event as CustomEvent<{alphabet: string[]}>;
             const symbols = customEvent.detail.alphabet;
@@ -28,31 +29,7 @@ export default function DFAPage() {
             window.removeEventListener("dfaAlphabetUpdated", handler);
         }
 
-        // let multiCharDetected = false;
-        
-        // const alphabet = parseAlphabetInput(alphabetInput);
-
-        // for(const element of alphabet){
-        //     if(element.length > 1){
-        //         multiCharDetected = true;
-        //         break;
-        //     }
-        // }
-
-        // setHasMultiCharAlphabet(multiCharDetected);
     }, [alphabetInput]);
-
-    // function parseAlphabetInput(input: string): Set<string> {
-    //     return new Set(
-    //         input
-    //             // Split by commas
-    //             .split(',')
-    //             // Trim whitespace from each element
-    //             .map(elem => elem.trim())
-    //             // Remove empty strings
-    //             .filter(elem => elem !== ''));
-    // }
-
 
     return (
       <main className="min-h-screen bg-blue-100 flex flex-col items-center">
