@@ -120,10 +120,9 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
     dragging = false;
     startClick = mouse;
 
-    console.log("Last edited arrow:", lastEditedArrow?.startCircle.text, " to ", lastEditedArrow?.endCircle.text);
-    // console.log("Old text:", oldText);
-    console.log("Last edited arrow text:", lastEditedArrow?.text);
-    console.log("Selected object: " , selectedObj instanceof Arrow || selectedObj instanceof SelfArrow ? "Arrow or SelfArrow" : "Not an Arrow or SelfArrow");
+    // console.log("Last edited arrow:", lastEditedArrow?.startCircle.text, " to ", lastEditedArrow?.endCircle.text);
+    // console.log("Last edited arrow text:", lastEditedArrow?.text);
+    // console.log("Selected object: " , selectedObj instanceof Arrow || selectedObj instanceof SelfArrow ? "Arrow or SelfArrow" : "Not an Arrow or SelfArrow");
 
     // If the previously edited object was an Arrow or SelfArrow, AND if its text has been modified,
     // AND if the currently selected object is different from the previous edited Arrow or SelfArrow,
@@ -137,9 +136,9 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
       if(transitionDeterminismCheck(lastEditedArrow)){
         // This will sort the string in ascending order and assign it to the arrow's text,
         // which makes it more visually appealing for the user
-        console.log("Transition determinism check passed for state ", lastEditedArrow.startCircle.id);
+        // console.log("Transition determinism check passed for state ", lastEditedArrow.startCircle.id);
         lastEditedArrow.text = lastEditedArrow.text.replace(/^[,\s]+|[,\s]+$/g, "").split(",").sort().join(",");
-        // oldText = lastEditedArrow.text;
+
       }
       // If the transitionDeterminismCheck returns false, that means the transition is not valid.
       // So, we set oldText equal to the empty string, since the arrow's text will also have been
@@ -148,7 +147,7 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
       // the text of the lastEditedArrow will be equal
       else{
         console.log("Transition determinism check failed for state ", lastEditedArrow.startCircle.id);
-        // oldText = "";
+
       }
     }
 
@@ -337,18 +336,7 @@ function setupDfaCanvas(canvas: HTMLCanvasElement) {
             // If the current object that is being typed on is an Arrow or SelfArrow,
             // then we will check if the character being typed is defined in the alphabet.
             // If not, we will alert the user.
-            // if(alphabet.has(event.key) || event.key === ','){
-              // Store the text of the object before it changes, since
-              // the 'text' attribute of the object will be directly modified
-              // by this keydown listener
-              // oldText = selectedObj.text;
-              // selectedObj.text += event.key;
-            // }
-            // else{
-            //   alert("\'" + event.key + "\' is not defined in the alphabet!");
-            // }
-
-
+            
             if (transitionLabelInputValidator.handleChar(event.key)) {
               selectedObj.text += event.key;
             } else {
@@ -577,32 +565,6 @@ function attachWhenReady() {
         // If the "Enter" key is pressed on the input string
         if (event.key === "Enter") {
           event.preventDefault();
-
-          // Obtain the value entered
-          // let newInput = inputString.value.trim();
-
-          // Check to see if it contains anything not defined in the alphabet.
-          // If it contains undefined characters, alert the user
-          // let notDefined: Array<string> = [];
-          // for(let char of newInput){
-          //   if(!alphabet.has(char)){
-          //     // Note to self: maybe make it so it goes through the entire string
-          //     // first and collects every character that is wrong? Then give an alert
-          //     // afterwards with every character that was wrong
-          //     notDefined.push(char);
-          //   }
-          // }
-
-          // if(notDefined.length == 1){
-          //   alert("\'" + notDefined[0] + "\' is not in the alphabet, this input is invalid!");
-          // }
-          // else if(notDefined.length > 1){
-          //   alert("\'" + notDefined.toString() + "\' is not in the alphabet, this input is invalid!");
-          // }
-          // else{
-          //   // Run the DFA algorithm
-          //   dfaAlgo(newInput);
-          // }
 
           dfaAlgo(inputString.value);
           
