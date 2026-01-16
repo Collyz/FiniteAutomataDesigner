@@ -604,12 +604,165 @@
         }
     }
 
+    class TrieNode {
+        constructor() {
+            this.children = new Map;
+            this.isTerminal = false;
+        }
+    }
+    class Trie {
+        constructor() {
+            this.root = new TrieNode();
+        }
+        insert(word) {
+            let node = this.root;
+            for (const char of word) {
+                if (!node.children.has(char)) {
+                    node.children.set(char, new TrieNode());
+                }
+                node = node.children.get(char);
+            }
+            node.isTerminal = true;
+        }
+        isPrefix(prefix) {
+            let node = this.root;
+            for (const char of prefix) {
+                const next = node.children.get(char);
+                if (!next) {
+                    return false;
+                }
+                node = next;
+            }
+            return true;
+        }
+        contains(word) {
+            let node = this.root;
+            for (const char of word) {
+                const next = node.children.get(char);
+                if (!next) {
+                    return false;
+                }
+                node = next;
+            }
+            return node.isTerminal;
+        }
+    }
+
+    /**
+     * TransitionLabelInputValidator
+     *
+     * This component performs incremental, prefix-based validation of transition
+     * labels as the user types. It intentionally does NOT tokenize input or emit
+     * symbols. Instead, it enforces that every keystroke keeps the current input
+     * as a valid prefix of some symbol in the user-defined alphabet.
+     *
+     * Design rationale:
+     * - Input is committed by UI interaction (arrow deselection), not by syntax.
+     * - Invalid symbols are prevented at the point of entry, eliminating the need
+     *   for post-hoc validation or token streams.
+     * - Multi-character symbols, overlapping prefixes, and escape sequences are
+     *   naturally supported via a Trie.
+     *
+     * This design mirrors editor-style validation rather than compiler-style
+     * lexing, which better fits an interactive automata editor.
+     *
+     * Responsibilities:
+     * - Maintain a buffer for the *current symbol* being typed
+     * - Validate keystrokes using a Trie (prefix-based)
+     * - Allow commas as separators
+     * - Support backspace
+     *
+     * Non-responsibilities:
+     * - Token emission
+     * - Commit logic
+     * - Escape replacement (handled elsewhere)
+     */
+    class TransitionLabelInputValidator {
+        constructor(alphabet) {
+            this.buffer = "";
+            this.trie = new Trie();
+            for (const symbol of alphabet) {
+                this.trie.insert(symbol);
+            }
+        }
+        /**
+         * Returns true if the character is allowed to be typed.
+         * If allowed, internal state is updated.
+         */
+        handleChar(char) {
+            console.log("Handling char:", char);
+            // Always allow commas — they separate symbols
+            if (char === ",") {
+                this.reset();
+                console.log("Comma typed, buffer reset");
+                return true;
+            }
+            const nextBuffer = this.buffer + char;
+            console.log("New buffer to check:", nextBuffer);
+            // Check prefix validity
+            if (this.trie.isPrefix(nextBuffer)) {
+                this.buffer = nextBuffer;
+                console.log("Valid prefix, buffer updated:", this.buffer);
+                return true;
+            }
+            // Invalid prefix → reject keystroke
+            console.log("Invalid prefix, keystroke rejected");
+            return false;
+        }
+        /**
+         * Handles backspace.
+         * Returns true if backspace should be allowed.
+         */
+        handleBackspace(currentText) {
+            if (currentText.length === 0) {
+                this.reset();
+                return true;
+            }
+            const lastChar = currentText[currentText.length - 1];
+            // If we backspaced over a comma, rebuild buffer
+            if (lastChar === ",") {
+                this.rebuildBufferFromText(currentText.slice(0, -1));
+                return true;
+            }
+            // Normal character backspace
+            this.buffer = this.buffer.slice(0, -1);
+            return true;
+        }
+        /**
+         * Clears the internal buffer.
+         * Call this when:
+         * - Arrow is deselected
+         * - Arrow selection changes
+         */
+        reset() {
+            this.buffer = "";
+        }
+        getBuffer() {
+            return this.buffer;
+        }
+        setBuffer(newBuffer) {
+            this.rebuildBufferFromText(newBuffer);
+        }
+        /**
+         * Rebuilds buffer based on the text after backspacing a comma.
+         * We only care about the *current symbol* (after last comma).
+         */
+        rebuildBufferFromText(text) {
+            const parts = text.split(",");
+            this.buffer = parts.length > 0
+                ? parts[parts.length - 1]
+                : "";
+        }
+    }
+
     // The alphabet defines every character that can be used in the DFA.
     // For easier usage, it has been defined as a Set.
     var alphabet = new Set(["0", "1"]);
+    var transitionLabelInputValidator = new TransitionLabelInputValidator(alphabet); // Input validator for transition labels
     // Since the alphabet is being imported, it cannot be reassigned
     // directly. So, this is a setter method for it.
     function setAlphabet(newAlphabet) {
+        transitionLabelInputValidator = new TransitionLabelInputValidator(newAlphabet); // Input validator for transition labels
         alphabet = newAlphabet;
     }
 
@@ -702,8 +855,13 @@
     // with other transitions going out from that state? If it does,
     // then it fails determinism.
     function transitionDeterminismCheck(lastEditedArrow) {
-        if (lastEditedArrow === null || lastEditedArrow.text === "") {
+        if (lastEditedArrow === null) {
             return false;
+        }
+        if (lastEditedArrow.text === "") {
+            lastEditedArrow.transition = new Set();
+            console.log("Empty transition, accepted");
+            return true;
         }
         // Leaving this here commented-out, for debugging purposes if the
         // need for it arises.
@@ -1342,154 +1500,6 @@
         }
     }
 
-    class TrieNode {
-        constructor() {
-            this.children = new Map;
-            this.isTerminal = false;
-        }
-    }
-    class Trie {
-        constructor() {
-            this.root = new TrieNode();
-        }
-        insert(word) {
-            let node = this.root;
-            for (const char of word) {
-                if (!node.children.has(char)) {
-                    node.children.set(char, new TrieNode());
-                }
-                node = node.children.get(char);
-            }
-            node.isTerminal = true;
-        }
-        isPrefix(prefix) {
-            let node = this.root;
-            for (const char of prefix) {
-                const next = node.children.get(char);
-                if (!next) {
-                    return false;
-                }
-                node = next;
-            }
-            return true;
-        }
-        contains(word) {
-            let node = this.root;
-            for (const char of word) {
-                const next = node.children.get(char);
-                if (!next) {
-                    return false;
-                }
-                node = next;
-            }
-            return node.isTerminal;
-        }
-    }
-
-    /**
-     * TransitionLabelInputValidator
-     *
-     * This component performs incremental, prefix-based validation of transition
-     * labels as the user types. It intentionally does NOT tokenize input or emit
-     * symbols. Instead, it enforces that every keystroke keeps the current input
-     * as a valid prefix of some symbol in the user-defined alphabet.
-     *
-     * Design rationale:
-     * - Input is committed by UI interaction (arrow deselection), not by syntax.
-     * - Invalid symbols are prevented at the point of entry, eliminating the need
-     *   for post-hoc validation or token streams.
-     * - Multi-character symbols, overlapping prefixes, and escape sequences are
-     *   naturally supported via a Trie.
-     *
-     * This design mirrors editor-style validation rather than compiler-style
-     * lexing, which better fits an interactive automata editor.
-     *
-     * Responsibilities:
-     * - Maintain a buffer for the *current symbol* being typed
-     * - Validate keystrokes using a Trie (prefix-based)
-     * - Allow commas as separators
-     * - Support backspace
-     *
-     * Non-responsibilities:
-     * - Token emission
-     * - Commit logic
-     * - Escape replacement (handled elsewhere)
-     */
-    class TransitionLabelInputValidator {
-        constructor(alphabet) {
-            this.buffer = "";
-            this.trie = new Trie();
-            for (const symbol of alphabet) {
-                this.trie.insert(symbol);
-            }
-        }
-        /**
-         * Returns true if the character is allowed to be typed.
-         * If allowed, internal state is updated.
-         */
-        handleChar(char) {
-            console.log("Handling char:", char);
-            // Always allow commas — they separate symbols
-            if (char === ",") {
-                this.reset();
-                console.log("Comma typed, buffer reset");
-                return true;
-            }
-            const nextBuffer = this.buffer + char;
-            console.log("New buffer to check:", nextBuffer);
-            // Check prefix validity
-            if (this.trie.isPrefix(nextBuffer)) {
-                this.buffer = nextBuffer;
-                console.log("Valid prefix, buffer updated:", this.buffer);
-                return true;
-            }
-            // Invalid prefix → reject keystroke
-            console.log("Invalid prefix, keystroke rejected");
-            return false;
-        }
-        /**
-         * Handles backspace.
-         * Returns true if backspace should be allowed.
-         */
-        handleBackspace(currentText) {
-            if (currentText.length === 0) {
-                this.reset();
-                return true;
-            }
-            const lastChar = currentText[currentText.length - 1];
-            // If we backspaced over a comma, rebuild buffer
-            if (lastChar === ",") {
-                this.rebuildBufferFromText(currentText.slice(0, -1));
-                return true;
-            }
-            // Normal character backspace
-            this.buffer = this.buffer.slice(0, -1);
-            return true;
-        }
-        /**
-         * Clears the internal buffer.
-         * Call this when:
-         * - Arrow is deselected
-         * - Arrow selection changes
-         */
-        reset() {
-            this.buffer = "";
-        }
-        getBuffer() {
-            return this.buffer;
-        }
-        /**
-         * Rebuilds buffer based on the text after backspacing a comma.
-         * We only care about the *current symbol* (after last comma).
-         */
-        rebuildBufferFromText(text) {
-            const parts = text.split(",");
-            this.buffer = parts.length > 0
-                ? parts[parts.length - 1]
-                : "";
-        }
-    }
-
     /*
      Portions of this file are adapted from:
 
@@ -1522,7 +1532,6 @@
     let shiftPressed = false; // True if shift is pressed, false otherwise
     let startClick = null;
     let tempArrow = null; // A new arrow being created
-    let transitionLabelInputValidator = new TransitionLabelInputValidator(alphabet); // Input validator for transition labels
     // Returns true if no input or focusable element is active meaning the document body has focus.
     function canvasHasFocus() {
         return (document.activeElement || document.body) == document.body;
@@ -1615,7 +1624,7 @@
             if (selectedObj instanceof Arrow ||
                 selectedObj instanceof SelfArrow) {
                 lastEditedArrow = selectedObj;
-                transitionLabelInputValidator.reset();
+                transitionLabelInputValidator.setBuffer(selectedObj.text);
             }
             if (selectedObj != null) {
                 if (shiftPressed && selectedObj instanceof Circle) {
@@ -2041,7 +2050,6 @@
                                 alphabet: Array.from(newAlphabet)
                             }
                         }));
-                        transitionLabelInputValidator = new TransitionLabelInputValidator(alphabet);
                         console.log(alphabet);
                         alphabetInput.value = "";
                         if (alphabetLabel) {
