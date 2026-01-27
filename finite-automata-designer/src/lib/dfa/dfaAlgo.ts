@@ -1,5 +1,5 @@
 import { Circle, circles } from "../../../public/scripts/Shapes/Circle";
-import { alphabet } from "../../../public/scripts/alphabet";
+import { alphabet } from "./dfaTransitionSymbols";
 import { Arrow } from "../../../public/scripts/Shapes/Arrow";
 import { SelfArrow } from "../../../public/scripts/Shapes/SelfArrow";
 import { startState } from "../../../public/scripts/Shapes/EntryArrow";

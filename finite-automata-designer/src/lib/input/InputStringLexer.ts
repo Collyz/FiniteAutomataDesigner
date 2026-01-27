@@ -73,7 +73,7 @@ export function parseInputString(
         // contains one element, which also happens to be
         // a multi-character symbol.
         if (!allSingleChar) {
-            transitionLabelInputValidator.reset();
+            transitionLabelInputValidator.resetBuffer();
 
             // Validate the entire input as a single token
             for(const char of trimmed){
@@ -85,7 +85,7 @@ export function parseInputString(
                 }
             }
             tokens.push(trimmed);
-            transitionLabelInputValidator.reset();
+            transitionLabelInputValidator.resetBuffer();
         }
         else{
             // Split the input into individual characters

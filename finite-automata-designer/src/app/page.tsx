@@ -23,10 +23,11 @@ export default function Home() {
           </Link>
 
           {/* Button for NFA */}
-          <button className="px-10 py-5 bg-gray-600 text-2xl text-white rounded hover:bg-black hover:shadow-lg hover:scale-105 transition-transform duration-400">
-            NFA
-          </button>
-
+          <Link href="/nfa" passHref>
+            <button className="px-10 py-5 bg-gray-600 text-2xl text-white rounded hover:bg-black hover:shadow-lg hover:scale-105 transition-transform duration-400">
+              NFA
+            </button>
+          </Link>
         </div>
       </div>
     </main>

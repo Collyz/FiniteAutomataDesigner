@@ -2,7 +2,7 @@ import { Circle } from "../Shapes/Circle";
 import { Arrow } from "../Shapes/Arrow";
 import { SelfArrow } from "../Shapes/SelfArrow";
 import { EntryArrow, setStartState } from "../Shapes/EntryArrow";
-import { dfaAlgo, transitionDeterminismCheck } from "../../../src/lib/dfa/dfaAlgo";
+import { transitionDeterminismCheck } from "../../../src/lib/dfa/dfaAlgo";
 import { setAlphabet } from "../alphabet";
 
 const startsWith = {

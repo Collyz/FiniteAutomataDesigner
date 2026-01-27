@@ -48,7 +48,7 @@ export class TransitionLabelInputValidator {
     console.log("Handling char:", char);
     // Always allow commas — they separate symbols
     if (char === ",") {
-      this.reset();
+      this.resetBuffer();
       console.log("Comma typed, buffer reset");
       return true;
     }
@@ -74,7 +74,7 @@ export class TransitionLabelInputValidator {
    */
   public handleBackspace(currentText: string): boolean {
     if (currentText.length === 0) {
-      this.reset();
+      this.resetBuffer();
       return true;
     }
 
@@ -97,7 +97,7 @@ export class TransitionLabelInputValidator {
    * - Arrow is deselected
    * - Arrow selection changes
    */
-  public reset(): void {
+  public resetBuffer(): void {
     this.buffer = "";
   }
 
@@ -107,6 +107,10 @@ export class TransitionLabelInputValidator {
 
   public setBuffer(newBuffer: string): void {
     this.rebuildBufferFromText(newBuffer);
+  }
+
+  public getTrie(): Trie {
+    return this.trie;
   }
 
   /**

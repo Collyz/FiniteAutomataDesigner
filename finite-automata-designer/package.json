@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:all": "npm run build:canvas && npm run dev",
+    "dev:dfa": "npm run build:dfa && npm run dev",
+    "dev:nfa": "npm run build:nfa && npm run dev",
     "build": "next build",
-    "build:canvas": "rollup -c rollup.config.js",
-    "build:dfa": "cd src/lib/dfa && tsc -p tsconfig.dfa.json",
+    "build:canvas": "rollup -c rollup.dfa.config.js && rollup -c rollup.nfa.config.js",
+    "build:dfa": "rollup -c rollup.dfa.config.js",
+    "build:nfa": "rollup -c rollup.nfa.config.js",
     "build:prod": "npm run build:canvas && npm run build:dfa && npm run build",
     "start": "next start",
     "lint": "next lint"
