@@ -1,7 +1,5 @@
 "use client";
 
-'use client';
-
 {/* Script */}
 import Script from 'next/script';
 
