@@ -36,8 +36,6 @@ export interface FsmCanvasConfig {
   canvasId: string;
   // id of the Run button for this automaton's page
   runBtnId: string;
-  // Name of the CustomEvent the page listens to for alphabet changes
-  alphabetUpdatedEventName: string;
   // Runs the automaton against an input string
   runAlgo: (input: string) => void;
   // Validates/commits a finished transition label. Returns false when rejected.
@@ -46,6 +44,7 @@ export interface FsmCanvasConfig {
   // be read through getters rather than captured once.
   getAlphabet: () => Set<string>;
   setAlphabet: (alphabet: Set<string>) => void;
+  dispatchAlphabetUpdated: () => void;
   getValidator: () => TransitionLabelInputValidator;
   // Builds the importer used to load an exported SVG/LaTeX document
   createImporter: (
@@ -500,19 +499,6 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
     }
   }
 
-  // This event notifies the page that the alphabet has been updated.
-  // This lets the page know if it needs to check for multi-character
-  // elements in the alphabet, in which case it will show a disclaimer to
-  // the user on how to submit input strings properly.
-  function dispatchAlphabetUpdated() {
-    window.dispatchEvent(new CustomEvent(config.alphabetUpdatedEventName, {
-        detail: {
-          alphabet: Array.from(config.getAlphabet())
-        }
-      })
-    );
-  }
-
   function importHelper(
     canvas: HTMLCanvasElement | null,
     drawImportBtn: HTMLButtonElement | null,
@@ -547,7 +533,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         }
       }
       updateAlphabetLabel(alphabetLabel);
-      dispatchAlphabetUpdated();
+      config.dispatchAlphabetUpdated();
     }
   }
 
@@ -686,7 +672,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
 
             config.setAlphabet(new Set(normalized));
 
-            dispatchAlphabetUpdated();
+            config.dispatchAlphabetUpdated();
 
             console.log(config.getAlphabet());
 
