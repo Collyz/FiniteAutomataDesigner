@@ -53,11 +53,11 @@ initFsmCanvas({
   automatonLabel: "NDFSM",
   canvasId: "NDFSMCanvas",
   runBtnId: "ndfsmRunBtn",
-  alphabetUpdatedEventName: "ndfsmAlphabetUpdated",
   runAlgo: ndfsmAlgo,
   commitTransition,
   getAlphabet: () => alphabet,
   setAlphabet,
+  dispatchAlphabetUpdated,
   getValidator: () => transitionLabelInputValidator,
   createImporter: (circs, arrs, data, draw) => new Importer(circs, arrs, data, draw),
   onCanvasReady: (draw) => {
@@ -90,9 +90,23 @@ function loadSerializedNDFSM(data: SerializedFA){
 
   if(alphabetLabel){
     alphabetLabel.textContent = "Alphabet: {"+Array.from(alphabet).join(",")+"}";
+    dispatchAlphabetUpdated();
   }
 
   if(drawRef){
     drawRef();
   }
+}
+
+// This event notifies the page that the alphabet has been updated.
+// This lets the page know if it needs to check for multi-character
+// elements in the alphabet, in which case it will show a disclaimer to
+// the user on how to submit input strings properly.
+function dispatchAlphabetUpdated() {
+  window.dispatchEvent(new CustomEvent("ndfsmAlphabetUpdated", {
+      detail: {
+        alphabet: Array.from(alphabet)
+      }
+    })
+  );
 }
