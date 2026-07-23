@@ -56,6 +56,18 @@ window.exportDFSM = function(){
   );
 }
 
+window.clearDFSMCanvas = function () {
+    const canvas = document.getElementById(
+        "DFSMCanvas"
+    ) as HTMLCanvasElement | null;
+
+    if (!canvas) {
+        return;
+    }
+
+    clearAutomaton(canvas);
+};
+
 initFsmCanvas({
   automatonLabel: "DFSM",
   canvasId: "DFSMCanvas",

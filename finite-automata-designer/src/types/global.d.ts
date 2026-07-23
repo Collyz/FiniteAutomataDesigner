@@ -14,5 +14,8 @@ declare global {
     /** Serializes the current NDFSM canvas state and returns it. */
     exportNDFSM: () => SerializedFA;
 
+    clearDFSMCanvas: () => void;
+    clearNDFSMCanvas: () => void;
+
   }
 }

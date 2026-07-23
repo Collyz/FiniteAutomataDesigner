@@ -52,6 +52,18 @@ window.exportNDFSM = function(){
   );
 }
 
+window.clearNDFSMCanvas = function () {
+    const canvas = document.getElementById(
+        "NDFSMCanvas"
+    ) as HTMLCanvasElement | null;
+
+    if (!canvas) {
+        return;
+    }
+
+    clearAutomaton(canvas);
+};
+
 initFsmCanvas({
   automatonLabel: "NDFSM",
   canvasId: "NDFSMCanvas",
