@@ -70,6 +70,8 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
             const hasMulti = symbols.some(symbol => symbol.length > 1);
             setHasMultiCharAlphabet(hasMulti);
+
+            console.log("Has multi-character alphabet...");
         }
 
         // Ex: dfsmAlphabetUpdated or ndfsmAlphabetUpdated, where "type" is either "DFSM" or "NDFSM"
@@ -80,7 +82,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             window.removeEventListener(`${type.toLowerCase()}AlphabetUpdated`, handler);
         }
 
-    }, [alphabetInput, type]);
+    }, [alphabetInput, type, automatonId]);
 
     // Holds the toast notification subscriber
     useEffect(() => {
@@ -122,7 +124,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
             if (typeof api.loadFAIntoCanvas === 'function') {
                 // Canvas script is already loaded — call directly.
-                api.loadFAIntoCanvas(finiteAutomatonData.automaton);
+                api.loadFAIntoCanvas(automatonId, finiteAutomatonData.automaton);
             } else {
                 // Canvas script hasn't finished loading yet (production race).
                 // Store the data so the onReady callback can deliver it once ready.
@@ -132,6 +134,20 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
         loadAutomaton();
     },[automatonId, api]);
+
+    // useEffect(() => {
+    //     if (automatonId) return;
+
+    //     if (typeof api.getCurrentProjectId !== "function") {
+    //         return;
+    //     }
+
+    //     const projectId = api.getCurrentProjectId();
+
+    //     if (projectId) {
+    //         router.replace(`/${type.toLowerCase()}/${projectId}`);
+    //     }
+    // }, [type, automatonId, api, router]);
 
 
     async function handleSaveAsNew(newName: string, newDescription: string){
@@ -289,9 +305,19 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                 // Fires when the script first loads AND after every subsequent
                 // component mount where the script is already cached.
                 // Delivers any automaton data that arrived before the script was ready.
-                if (pendingAutomaton.current !== null) {
-                    api.loadFAIntoCanvas(pendingAutomaton.current);
-                    pendingAutomaton.current = null;
+                if(automatonId){
+                    if (pendingAutomaton.current !== null) {
+                        api.loadFAIntoCanvas(automatonId, pendingAutomaton.current);
+                        pendingAutomaton.current = null;
+                    }
+
+                    return;
+                }
+
+                const projectId = api.getCurrentProjectId();
+
+                if(projectId){
+                    router.replace(`/${type.toLowerCase()}?id=${projectId}`);
                 }
             }}
         />
