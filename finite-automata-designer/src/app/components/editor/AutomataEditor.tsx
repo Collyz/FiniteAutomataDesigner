@@ -307,13 +307,9 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                 // Fires when the script first loads AND after every subsequent
                 // component mount where the script is already cached.
                 // Delivers any automaton data that arrived before the script was ready.
-                if(automatonId){
-                    if (pendingAutomaton.current !== null) {
-                        api.loadFAIntoCanvas(pendingAutomaton.current);
-                        pendingAutomaton.current = null;
-                    }
-
-                    return;
+                if (pendingAutomaton.current !== null) {
+                    api.loadFAIntoCanvas(pendingAutomaton.current);
+                    pendingAutomaton.current = null;
                 }
             }}
         />
