@@ -123,8 +123,13 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             setDescription(finiteAutomatonData.description);
 
             if (typeof api.loadFAIntoCanvas === 'function') {
+                sessionStorage.setItem(
+                    `${type.toLowerCase()}-current-project`,
+                    automatonId
+                );
+
                 // Canvas script is already loaded — call directly.
-                api.loadFAIntoCanvas(automatonId, finiteAutomatonData.automaton);
+                api.loadFAIntoCanvas(finiteAutomatonData.automaton);
             } else {
                 // Canvas script hasn't finished loading yet (production race).
                 // Store the data so the onReady callback can deliver it once ready.
@@ -133,22 +138,19 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
         }
 
         loadAutomaton();
-    },[automatonId, api]);
+    },[automatonId, api, type]);
 
-    // useEffect(() => {
-    //     if (automatonId) return;
+    useEffect(() => {
+        if (automatonId) return;
 
-    //     if (typeof api.getCurrentProjectId !== "function") {
-    //         return;
-    //     }
+        const projectId = sessionStorage.getItem(
+            `${type.toLowerCase()}-current-project`
+        );
 
-    //     const projectId = api.getCurrentProjectId();
-
-    //     if (projectId) {
-    //         router.replace(`/${type.toLowerCase()}/${projectId}`);
-    //     }
-    // }, [type, automatonId, api, router]);
-
+        if (projectId) {
+            router.replace(`/${type.toLowerCase()}?id=${projectId}`);
+        }
+    }, [type, automatonId, router]);
 
     async function handleSaveAsNew(newName: string, newDescription: string){
     
@@ -307,17 +309,11 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                 // Delivers any automaton data that arrived before the script was ready.
                 if(automatonId){
                     if (pendingAutomaton.current !== null) {
-                        api.loadFAIntoCanvas(automatonId, pendingAutomaton.current);
+                        api.loadFAIntoCanvas(pendingAutomaton.current);
                         pendingAutomaton.current = null;
                     }
 
                     return;
-                }
-
-                const projectId = api.getCurrentProjectId();
-
-                if(projectId){
-                    router.replace(`/${type.toLowerCase()}?id=${projectId}`);
                 }
             }}
         />
