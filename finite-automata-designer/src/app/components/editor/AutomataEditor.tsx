@@ -32,6 +32,8 @@ import { getAutomaton } from '@/lib/automata/queries';
 import { saveAutomaton, updateAutomaton } from "@/lib/automata/mutations";
 
 import { automataApi } from './api/automataApi';
+import NewProjectButton from './NewProjectButton';
+import { setEditorSession } from '@/lib/editorSession';
 
 interface AutomataEditorProps {
     type: "DFSM" | "NDFSM";
@@ -49,7 +51,6 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
     const router = useRouter();
     const searchParams = useSearchParams();
     const automatonId = searchParams?.get("id") as string;
-    const isNewProject = (searchParams?.get("new") === "true") as boolean;
 
     const title: string = type === "DFSM" ? "Deterministic Finite State Machine" : "Non-Deterministic Finite State Machine";
 
@@ -124,10 +125,10 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             setDescription(finiteAutomatonData.description);
 
             if (typeof api.loadFAIntoCanvas === 'function') {
-                sessionStorage.setItem(
-                    `${type.toLowerCase()}-current-project`,
-                    automatonId
-                );
+                setEditorSession(type, {
+                    mode: "saved",
+                    projectId: automatonId
+                });
 
                 // Canvas script is already loaded — call directly.
                 api.loadFAIntoCanvas(finiteAutomatonData.automaton);
@@ -140,18 +141,6 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
         loadAutomaton();
     },[automatonId, api, type]);
-
-    useEffect(() => {
-        if (automatonId || isNewProject) return;
-
-        const projectId = sessionStorage.getItem(
-            `${type.toLowerCase()}-current-project`
-        );
-
-        if (projectId) {
-            router.replace(`/${type.toLowerCase()}?id=${projectId}`);
-        }
-    }, [type, automatonId, isNewProject, router]);
 
     async function handleSaveAsNew(newName: string, newDescription: string){
     
@@ -282,6 +271,12 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
                         </div>
                     </div>
+                    <div>
+                        <NewProjectButton
+                            type={type}
+                        />
+                    </div>
+
                     {/* Clear Canvas parent container */}
                     <div>
                         <ClearCanvasButton />
