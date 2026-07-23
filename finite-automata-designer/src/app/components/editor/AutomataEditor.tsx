@@ -49,6 +49,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
     const router = useRouter();
     const searchParams = useSearchParams();
     const automatonId = searchParams?.get("id") as string;
+    const isNewProject = (searchParams?.get("new") === "true") as boolean;
 
     const title: string = type === "DFSM" ? "Deterministic Finite State Machine" : "Non-Deterministic Finite State Machine";
 
@@ -141,7 +142,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
     },[automatonId, api, type]);
 
     useEffect(() => {
-        if (automatonId) return;
+        if (automatonId || isNewProject) return;
 
         const projectId = sessionStorage.getItem(
             `${type.toLowerCase()}-current-project`
@@ -150,7 +151,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
         if (projectId) {
             router.replace(`/${type.toLowerCase()}?id=${projectId}`);
         }
-    }, [type, automatonId, router]);
+    }, [type, automatonId, isNewProject, router]);
 
     async function handleSaveAsNew(newName: string, newDescription: string){
     
