@@ -35,7 +35,17 @@ let drawRef: (() => void) | null = null;
 // Automaton data that arrived before the canvas finished mounting.
 let pendingDFSM: SerializedFA | null = null;
 
-window.loadDFSMIntoCanvas = function(data: SerializedFA){
+
+// The ID of the project currently loaded into this editor.
+// Null means we're editing a new/unsaved automaton.
+let currentProjectId: string | null = null;
+
+window.loadDFSMIntoCanvas = function(
+  projectId: string | null, 
+  data: SerializedFA
+){
+
+  currentProjectId = projectId;
 
   if(!drawRef){
     pendingDFSM = data;
@@ -43,6 +53,10 @@ window.loadDFSMIntoCanvas = function(data: SerializedFA){
   }
 
   loadSerializedDFSM(data);
+}
+
+window.getCurrentDFSMProjectId = function(){
+  return currentProjectId;
 }
 
 window.exportDFSM = function(){

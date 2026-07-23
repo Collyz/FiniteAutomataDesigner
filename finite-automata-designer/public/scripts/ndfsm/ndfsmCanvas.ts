@@ -31,13 +31,24 @@ let drawRef: (() => void) | null = null;
 
 let pendingNDFSM: SerializedFA | null = null;
 
-window.loadNDFSMIntoCanvas = function(data: SerializedFA){
+let currentProjectId: string | null = null;
+
+window.loadNDFSMIntoCanvas = function(
+  projectId: string | null,
+  data: SerializedFA
+){
+  currentProjectId = projectId;
+
   if(!drawRef){
     pendingNDFSM = data;
     return;
   }
 
   loadSerializedNDFSM(data);
+}
+
+window.getCurrentNDFSMProjectId = function(){
+  return currentProjectId;
 }
 
 window.exportNDFSM = function(){
