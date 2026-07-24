@@ -51,6 +51,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
     const router = useRouter();
     const searchParams = useSearchParams();
     const automatonId = searchParams?.get("id") as string;
+    const isNewProject = (searchParams?.get("new") === "true") as boolean;
 
     const title: string = type === "DFSM" ? "Deterministic Finite State Machine" : "Non-Deterministic Finite State Machine";
 
@@ -142,6 +143,15 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
         loadAutomaton();
     },[automatonId, api, type]);
 
+    useEffect(() => {
+        if (!isNewProject) return;
+
+        setEditorSession(type, {
+            mode: "new"
+        });
+
+    }, [automatonId, api, isNewProject, type]);
+
     async function handleSaveAsNew(newName: string, newDescription: string){
     
         const serialized = api.exportFA();
@@ -174,6 +184,19 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             showToast("Save failed.", { color: "red", duration: 6000 });
         }
     }
+
+    const handleNewProject = () => {
+        setEditorSession(type, {
+            mode: "new",
+        });
+
+        setName(null);
+        setDescription("");
+
+        api.clearCanvas();
+
+        router.push(`/${type.toLowerCase()}?new=true`);
+    };
 
     return (
       <main className="min-h-screen bg-blue-100 flex flex-col items-center">
@@ -273,7 +296,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                     </div>
                     <div>
                         <NewProjectButton
-                            type={type}
+                            handleNewProject={handleNewProject}
                         />
                     </div>
 
