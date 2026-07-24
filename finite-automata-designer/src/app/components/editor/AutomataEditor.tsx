@@ -33,7 +33,7 @@ import { saveAutomaton, updateAutomaton } from "@/lib/automata/mutations";
 
 import { automataApi } from './api/automataApi';
 import NewProjectButton from './NewProjectButton';
-import { setEditorSession } from '@/lib/editorSession';
+import { getEditorSession, setEditorSession } from '@/lib/editorSession';
 
 interface AutomataEditorProps {
     type: "DFSM" | "NDFSM";
@@ -60,6 +60,47 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
     // Holds automaton data fetched before the canvas script has finished loading.
     // onReady on the <Script> tag drains this once the script is ready.
     const pendingAutomaton = useRef<SerializedFA | null>(null);
+
+    useEffect(() => {
+        if (automatonId || isNewProject) {
+            return;
+        }
+
+        const session = getEditorSession(type);
+
+        if (!session) {
+            router.replace(
+                `/${type.toLowerCase()}?new=true`
+            );
+
+            return;
+        }
+
+
+        if (
+            session.mode === "saved" &&
+            session.projectId
+        ) {
+            router.replace(
+                `/${type.toLowerCase()}?id=${session.projectId}`
+            );
+
+            return;
+        }
+
+
+        if (session.mode === "new") {
+            router.replace(
+                `/${type.toLowerCase()}?new=true`
+            );
+        }
+
+    }, [
+        type,
+        automatonId,
+        isNewProject,
+        router
+    ]);
 
     useEffect(() => {
 
