@@ -101,18 +101,21 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
         router
     ]);
 
+
+    function syncAlphabet(symbols: string[]) {
+        setHasMultiCharAlphabet(
+            symbols.some(symbol => symbol.length > 1)
+        );
+    }
+
     useEffect(() => {
 
         // This will listen for alphabet updates from the canvas script
         const handler = (event: Event) => {
-            const customEvent = event as CustomEvent<{alphabet: string[]}>;
-            const symbols = customEvent.detail.alphabet;
+            const customEvent = event as CustomEvent<{ alphabet: string[] }>;
 
-            const hasMulti = symbols.some(symbol => symbol.length > 1);
-            setHasMultiCharAlphabet(hasMulti);
-
-            console.log("Has multi-character alphabet...");
-        }
+            syncAlphabet(customEvent.detail.alphabet);
+        };
 
         // Ex: dfsmAlphabetUpdated or ndfsmAlphabetUpdated, where "type" is either "DFSM" or "NDFSM"
         window.addEventListener(`${type.toLowerCase()}AlphabetUpdated`, handler);
@@ -367,6 +370,11 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                     api.loadFAIntoCanvas(pendingAutomaton.current);
                     pendingAutomaton.current = null;
                 }
+                else{
+                    // Synchronize React with the current alphabet now that the
+                    // canvas API definitely exists.
+                    syncAlphabet(api.getAlphabet());
+                }   
             }}
         />
       </main>
