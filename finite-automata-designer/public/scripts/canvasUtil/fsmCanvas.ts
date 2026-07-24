@@ -59,14 +59,21 @@ export interface FsmCanvasConfig {
 
 // Empties the automaton and wipes the canvas.
 // Returns false when no 2d context is available.
-export function clearAutomaton(canvas: HTMLCanvasElement | null): boolean {
+export function clearAutomaton(
+  canvas: HTMLCanvasElement | null,
+  draw?: () => void,
+): boolean {
   if (canvas) {
     const ctx = canvas.getContext('2d');
     if (ctx) {
       arrows.length = 0;
       circles.length = 0;
       setStartState(null);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (draw) {
+        draw();
+      } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
       return true;
     }
   }

@@ -52,7 +52,7 @@ window.exportNDFSM = function(){
   );
 }
 
-window.clearNDFSMCanvas = function () {
+window.resetNDFSMEditor = function () {
     const canvas = document.getElementById(
         "NDFSMCanvas"
     ) as HTMLCanvasElement | null;
@@ -61,7 +61,20 @@ window.clearNDFSMCanvas = function () {
         return;
     }
 
-    clearAutomaton(canvas);
+    clearAutomaton(canvas, drawRef ?? undefined);
+
+    setAlphabet(new Set(["0", "1"]));
+
+    dispatchAlphabetUpdated();
+
+    const alphabetLabel = document.getElementById(
+        "alphabetLabel"
+    ) as HTMLLabelElement | null;
+
+    if (alphabetLabel) {
+        alphabetLabel.textContent = "Alphabet: {0,1}";
+    }
+
 };
 
 initFsmCanvas({

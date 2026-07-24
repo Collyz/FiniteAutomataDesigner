@@ -56,7 +56,7 @@ window.exportDFSM = function(){
   );
 }
 
-window.clearDFSMCanvas = function () {
+window.resetDFSMEditor = function () {
     const canvas = document.getElementById(
         "DFSMCanvas"
     ) as HTMLCanvasElement | null;
@@ -65,7 +65,20 @@ window.clearDFSMCanvas = function () {
         return;
     }
 
-    clearAutomaton(canvas);
+    clearAutomaton(canvas, drawRef ?? undefined);
+
+    setAlphabet(new Set(["0", "1"]));
+
+    dispatchAlphabetUpdated();
+
+    const alphabetLabel = document.getElementById(
+        "alphabetLabel"
+    ) as HTMLLabelElement | null;
+
+    if (alphabetLabel) {
+        alphabetLabel.textContent = "Alphabet: {0,1}";
+    }
+
 };
 
 initFsmCanvas({

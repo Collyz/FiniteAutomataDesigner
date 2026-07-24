@@ -234,7 +234,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
         setName(null);
         setDescription("");
 
-        api.clearCanvas();
+        api.resetEditor();
 
         router.push(`/${type.toLowerCase()}?new=true`);
     };
