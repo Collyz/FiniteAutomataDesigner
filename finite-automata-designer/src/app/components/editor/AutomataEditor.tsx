@@ -24,6 +24,7 @@ import BackButton from "./BackButton";
 import SaveActions from './SaveActions';
 import SaveProjectModal from "../projects/SaveProjectModal";
 import ToastNotification, { SHOW_TOAST_EVENT, ShowToastDetail, showToast } from "../misc/ToastNotification";
+import NewProjectButton from './NewProjectButton';
 
 {/* Database/Serialization */}
 import { SerializedFA } from '@/lib/shared/types';
@@ -32,7 +33,6 @@ import { getAutomaton } from '@/lib/automata/queries';
 import { saveAutomaton, updateAutomaton } from "@/lib/automata/mutations";
 
 import { automataApi } from './api/automataApi';
-import NewProjectButton from './NewProjectButton';
 import { getEditorSession, setEditorSession } from '@/lib/editorSession';
 
 interface AutomataEditorProps {
