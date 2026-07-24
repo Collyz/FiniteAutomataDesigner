@@ -1,24 +1,12 @@
 "use client";
 
-import { setEditorSession } from "@/lib/editorSession";
-import { useRouter } from "next/navigation";
-
 interface NewProjectButtonProps {
-    type: "DFSM" | "NDFSM";
+    handleNewProject: () => void;
 }
 
 export default function NewProjectButton({
-    type,
+    handleNewProject,
 }: NewProjectButtonProps) {
-    const router = useRouter();
-
-    const handleNewProject = () => {
-        setEditorSession(type, {
-            mode: "new"
-        });
-
-        router.push(`/${type.toLowerCase()}?new=true`);
-    };
 
     return (
         <button
