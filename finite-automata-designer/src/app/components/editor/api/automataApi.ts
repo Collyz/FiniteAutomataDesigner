@@ -9,6 +9,14 @@ export const automataApi = {
                 window.resetDFSMEditor();
             }
         },
+        getAlphabet: () => {
+            if(typeof window.getDFSMAlphabet === "function"){
+                return window.getDFSMAlphabet()
+            }
+            else{
+                return [] as string[];
+            }
+        },
     },
     NDFSM: {
         loadFAIntoCanvas: (data: SerializedFA) => window.loadNDFSMIntoCanvas(data),
@@ -16,6 +24,14 @@ export const automataApi = {
         resetEditor: () => {
             if (typeof window.resetNDFSMEditor === "function") {
                 window.resetNDFSMEditor();
+            }
+        },
+        getAlphabet: () => {
+            if(typeof window.getNDFSMAlphabet === "function"){
+                return window.getNDFSMAlphabet()
+            }
+            else{
+                return [] as string[];
             }
         },
     },

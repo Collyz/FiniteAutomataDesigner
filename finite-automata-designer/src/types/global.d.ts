@@ -14,8 +14,17 @@ declare global {
     /** Serializes the current NDFSM canvas state and returns it. */
     exportNDFSM: () => SerializedFA;
 
+    /** Resets the DFSM editor by erasing canvas and alphabet */
     resetDFSMEditor: () => void;
+
+    /** Resets the NDFSM editor by erasing canvas and alphabet */
     resetNDFSMEditor: () => void;
+
+    /** Gets the DFSM alphabet */
+    getDFSMAlphabet: () => string[];
+
+    /** Gets the NDFSM alphabet */
+    getNDFSMAlphabet: () => string[];
 
   }
 }

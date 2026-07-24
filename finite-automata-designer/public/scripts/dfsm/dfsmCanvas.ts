@@ -81,6 +81,10 @@ window.resetDFSMEditor = function () {
 
 };
 
+window.getDFSMAlphabet = function() {
+  return Array.from(alphabet);
+}
+
 initFsmCanvas({
   automatonLabel: "DFSM",
   canvasId: "DFSMCanvas",

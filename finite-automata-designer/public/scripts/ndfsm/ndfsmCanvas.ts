@@ -77,6 +77,10 @@ window.resetNDFSMEditor = function () {
 
 };
 
+window.getNDFSMAlphabet = function() {
+    return Array.from(alphabet);
+};
+
 initFsmCanvas({
   automatonLabel: "NDFSM",
   canvasId: "NDFSMCanvas",
