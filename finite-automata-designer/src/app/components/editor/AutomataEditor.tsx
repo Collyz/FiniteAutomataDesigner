@@ -1,7 +1,5 @@
 "use client";
 
-'use client';
-
 {/* Script */}
 import Script from 'next/script';
 
@@ -26,6 +24,7 @@ import BackButton from "./BackButton";
 import SaveActions from './SaveActions';
 import SaveProjectModal from "../projects/SaveProjectModal";
 import ToastNotification, { SHOW_TOAST_EVENT, ShowToastDetail, showToast } from "../misc/ToastNotification";
+import NewProjectButton from './NewProjectButton';
 
 {/* Database/Serialization */}
 import { SerializedFA } from '@/lib/shared/types';
@@ -34,6 +33,7 @@ import { getAutomaton } from '@/lib/automata/queries';
 import { saveAutomaton, updateAutomaton } from "@/lib/automata/mutations";
 
 import { automataApi } from './api/automataApi';
+import { getEditorSession, setEditorSession } from '@/lib/editorSession';
 
 interface AutomataEditorProps {
     type: "DFSM" | "NDFSM";
@@ -42,7 +42,6 @@ interface AutomataEditorProps {
 export default function AutomataEditor({ type }: AutomataEditorProps){
 
     const [hasMultiCharAlphabet, setHasMultiCharAlphabet] = useState(false);
-    const [alphabetInput, setAlphabetInput] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState<string | null>(null);
     const [description, setDescription] = useState<string | null>(null);
@@ -51,6 +50,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
     const router = useRouter();
     const searchParams = useSearchParams();
     const automatonId = searchParams?.get("id") as string;
+    const isNewProject = (searchParams?.get("new") === "true") as boolean;
 
     const title: string = type === "DFSM" ? "Deterministic Finite State Machine" : "Non-Deterministic Finite State Machine";
 
@@ -61,18 +61,61 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
     const pendingAutomaton = useRef<SerializedFA | null>(null);
 
     useEffect(() => {
+        if (automatonId || isNewProject) {
+            return;
+        }
+
+        const session = getEditorSession(type);
+
+        if (!session) {
+            router.replace(
+                `/${type.toLowerCase()}?new=true`
+            );
+
+            return;
+        }
+
+
+        if (
+            session.mode === "saved" &&
+            session.projectId
+        ) {
+            router.replace(
+                `/${type.toLowerCase()}?id=${session.projectId}`
+            );
+
+            return;
+        }
+
+
+        if (session.mode === "new") {
+            router.replace(
+                `/${type.toLowerCase()}?new=true`
+            );
+        }
+
+    }, [
+        type,
+        automatonId,
+        isNewProject,
+        router
+    ]);
+
+
+    function syncAlphabet(symbols: string[]) {
+        setHasMultiCharAlphabet(
+            symbols.some(symbol => symbol.length > 1)
+        );
+    }
+
+    useEffect(() => {
 
         // This will listen for alphabet updates from the canvas script
         const handler = (event: Event) => {
-            const customEvent = event as CustomEvent<{alphabet: string[]}>;
-            const symbols = customEvent.detail.alphabet;
+            const customEvent = event as CustomEvent<{ alphabet: string[] }>;
 
-            const alphabetString = symbols.join(',');
-            setAlphabetInput(alphabetString);
-
-            const hasMulti = symbols.some(symbol => symbol.length > 1);
-            setHasMultiCharAlphabet(hasMulti);
-        }
+            syncAlphabet(customEvent.detail.alphabet);
+        };
 
         // Ex: dfsmAlphabetUpdated or ndfsmAlphabetUpdated, where "type" is either "DFSM" or "NDFSM"
         window.addEventListener(`${type.toLowerCase()}AlphabetUpdated`, handler);
@@ -82,7 +125,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             window.removeEventListener(`${type.toLowerCase()}AlphabetUpdated`, handler);
         }
 
-    }, [alphabetInput, type]);
+    }, [type]);
 
     // Holds the toast notification subscriber
     useEffect(() => {
@@ -123,6 +166,11 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             setDescription(finiteAutomatonData.description);
 
             if (typeof api.loadFAIntoCanvas === 'function') {
+                setEditorSession(type, {
+                    mode: "saved",
+                    projectId: automatonId
+                });
+
                 // Canvas script is already loaded — call directly.
                 api.loadFAIntoCanvas(finiteAutomatonData.automaton);
             } else {
@@ -133,8 +181,16 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
         }
 
         loadAutomaton();
-    },[automatonId, api]);
+    },[automatonId, api, type]);
 
+    useEffect(() => {
+        if (!isNewProject) return;
+
+        setEditorSession(type, {
+            mode: "new"
+        });
+
+    }, [automatonId, api, isNewProject, type]);
 
     async function handleSaveAsNew(newName: string, newDescription: string){
     
@@ -168,6 +224,19 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             showToast("Save failed.", { color: "red", duration: 6000 });
         }
     }
+
+    const handleNewProject = () => {
+        setEditorSession(type, {
+            mode: "new",
+        });
+
+        setName(null);
+        setDescription("");
+
+        api.resetEditor();
+
+        router.push(`/${type.toLowerCase()}?new=true`);
+    };
 
     return (
       <main className="min-h-screen bg-blue-100 flex flex-col items-center">
@@ -265,6 +334,12 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
                         </div>
                     </div>
+                    <div>
+                        <NewProjectButton
+                            handleNewProject={handleNewProject}
+                        />
+                    </div>
+
                     {/* Clear Canvas parent container */}
                     <div>
                         <ClearCanvasButton />
@@ -295,6 +370,11 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                     api.loadFAIntoCanvas(pendingAutomaton.current);
                     pendingAutomaton.current = null;
                 }
+                else{
+                    // Synchronize React with the current alphabet now that the
+                    // canvas API definitely exists.
+                    syncAlphabet(api.getAlphabet());
+                }   
             }}
         />
       </main>

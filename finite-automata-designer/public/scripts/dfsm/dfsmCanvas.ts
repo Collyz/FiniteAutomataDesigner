@@ -35,7 +35,9 @@ let drawRef: (() => void) | null = null;
 // Automaton data that arrived before the canvas finished mounting.
 let pendingDFSM: SerializedFA | null = null;
 
-window.loadDFSMIntoCanvas = function(data: SerializedFA){
+window.loadDFSMIntoCanvas = function(
+  data: SerializedFA
+){
 
   if(!drawRef){
     pendingDFSM = data;
@@ -54,15 +56,45 @@ window.exportDFSM = function(){
   );
 }
 
+window.resetDFSMEditor = function () {
+    const canvas = document.getElementById(
+        "DFSMCanvas"
+    ) as HTMLCanvasElement | null;
+
+    if (!canvas) {
+        return;
+    }
+
+    clearAutomaton(canvas, drawRef ?? undefined);
+
+    setAlphabet(new Set(["0", "1"]));
+
+    dispatchAlphabetUpdated();
+
+    const alphabetLabel = document.getElementById(
+        "alphabetLabel"
+    ) as HTMLLabelElement | null;
+
+    if (alphabetLabel) {
+        alphabetLabel.textContent = "Alphabet: {0,1}";
+    }
+
+};
+
+window.getDFSMAlphabet = function() {
+  return Array.from(alphabet);
+}
+
 initFsmCanvas({
   automatonLabel: "DFSM",
   canvasId: "DFSMCanvas",
   runBtnId: "dfsmRunBtn",
-  alphabetUpdatedEventName: "dfsmAlphabetUpdated",
+  //alphabetUpdatedEventName: "dfsmAlphabetUpdated",
   runAlgo: dfsmAlgo,
   commitTransition: transitionDeterminismCheck,
   getAlphabet: () => alphabet,
   setAlphabet,
+  dispatchAlphabetUpdated,
   getValidator: () => transitionLabelInputValidator,
   createImporter: (circs, arrs, data, draw) => new Importer(circs, arrs, data, draw),
   onCanvasReady: (draw) => {
@@ -94,10 +126,24 @@ function loadSerializedDFSM(data: SerializedFA){
   const alphabetLabel = document.getElementById("alphabetLabel") as HTMLLabelElement | null;
   if(alphabetLabel){
     alphabetLabel.textContent = "Alphabet: {"+Array.from(alphabet).join(",")+"}";
+    dispatchAlphabetUpdated();
   }
 
   if(drawRef){
     drawRef();
   }
 
+}
+
+// This event notifies the page that the alphabet has been updated.
+// This lets the page know if it needs to check for multi-character
+// elements in the alphabet, in which case it will show a disclaimer to
+// the user on how to submit input strings properly.
+function dispatchAlphabetUpdated() {
+  window.dispatchEvent(new CustomEvent("dfsmAlphabetUpdated", {
+      detail: {
+        alphabet: Array.from(alphabet)
+      }
+    })
+  );
 }

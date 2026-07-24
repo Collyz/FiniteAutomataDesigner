@@ -36,8 +36,6 @@ export interface FsmCanvasConfig {
   canvasId: string;
   // id of the Run button for this automaton's page
   runBtnId: string;
-  // Name of the CustomEvent the page listens to for alphabet changes
-  alphabetUpdatedEventName: string;
   // Runs the automaton against an input string
   runAlgo: (input: string) => void;
   // Validates/commits a finished transition label. Returns false when rejected.
@@ -46,6 +44,7 @@ export interface FsmCanvasConfig {
   // be read through getters rather than captured once.
   getAlphabet: () => Set<string>;
   setAlphabet: (alphabet: Set<string>) => void;
+  dispatchAlphabetUpdated: () => void;
   getValidator: () => TransitionLabelInputValidator;
   // Builds the importer used to load an exported SVG/LaTeX document
   createImporter: (
@@ -60,14 +59,21 @@ export interface FsmCanvasConfig {
 
 // Empties the automaton and wipes the canvas.
 // Returns false when no 2d context is available.
-export function clearAutomaton(canvas: HTMLCanvasElement | null): boolean {
+export function clearAutomaton(
+  canvas: HTMLCanvasElement | null,
+  draw?: () => void,
+): boolean {
   if (canvas) {
     const ctx = canvas.getContext('2d');
     if (ctx) {
       arrows.length = 0;
       circles.length = 0;
       setStartState(null);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (draw) {
+        draw();
+      } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
       return true;
     }
   }
@@ -500,19 +506,6 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
     }
   }
 
-  // This event notifies the page that the alphabet has been updated.
-  // This lets the page know if it needs to check for multi-character
-  // elements in the alphabet, in which case it will show a disclaimer to
-  // the user on how to submit input strings properly.
-  function dispatchAlphabetUpdated() {
-    window.dispatchEvent(new CustomEvent(config.alphabetUpdatedEventName, {
-        detail: {
-          alphabet: Array.from(config.getAlphabet())
-        }
-      })
-    );
-  }
-
   function importHelper(
     canvas: HTMLCanvasElement | null,
     drawImportBtn: HTMLButtonElement | null,
@@ -547,7 +540,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         }
       }
       updateAlphabetLabel(alphabetLabel);
-      dispatchAlphabetUpdated();
+      config.dispatchAlphabetUpdated();
     }
   }
 
@@ -670,6 +663,12 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         });
       }
 
+      if(alphabetLabel){
+        updateAlphabetLabel(alphabetLabel);
+        console.log("Dispatching alphabet update...");
+        config.dispatchAlphabetUpdated();
+      }
+
       if (alphabetInput) {
         alphabetInput.addEventListener("keydown", (event) => {
           // If the "Enter" key is pressed on the alphabet input
@@ -686,13 +685,14 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
 
             config.setAlphabet(new Set(normalized));
 
-            dispatchAlphabetUpdated();
+            updateAlphabetLabel(alphabetLabel);
+
+            config.dispatchAlphabetUpdated();
 
             console.log(config.getAlphabet());
 
             alphabetInput.value = "";
 
-            updateAlphabetLabel(alphabetLabel);
             // Notify the React page so it can show a toast confirming the alphabet updated
             showToast("Alphabet Updated!");
           }

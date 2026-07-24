@@ -31,7 +31,10 @@ let drawRef: (() => void) | null = null;
 
 let pendingNDFSM: SerializedFA | null = null;
 
-window.loadNDFSMIntoCanvas = function(data: SerializedFA){
+window.loadNDFSMIntoCanvas = function(
+  data: SerializedFA
+){
+
   if(!drawRef){
     pendingNDFSM = data;
     return;
@@ -49,15 +52,44 @@ window.exportNDFSM = function(){
   );
 }
 
+window.resetNDFSMEditor = function () {
+    const canvas = document.getElementById(
+        "NDFSMCanvas"
+    ) as HTMLCanvasElement | null;
+
+    if (!canvas) {
+        return;
+    }
+
+    clearAutomaton(canvas, drawRef ?? undefined);
+
+    setAlphabet(new Set(["0", "1"]));
+
+    dispatchAlphabetUpdated();
+
+    const alphabetLabel = document.getElementById(
+        "alphabetLabel"
+    ) as HTMLLabelElement | null;
+
+    if (alphabetLabel) {
+        alphabetLabel.textContent = "Alphabet: {0,1}";
+    }
+
+};
+
+window.getNDFSMAlphabet = function() {
+    return Array.from(alphabet);
+};
+
 initFsmCanvas({
   automatonLabel: "NDFSM",
   canvasId: "NDFSMCanvas",
   runBtnId: "ndfsmRunBtn",
-  alphabetUpdatedEventName: "ndfsmAlphabetUpdated",
   runAlgo: ndfsmAlgo,
   commitTransition,
   getAlphabet: () => alphabet,
   setAlphabet,
+  dispatchAlphabetUpdated,
   getValidator: () => transitionLabelInputValidator,
   createImporter: (circs, arrs, data, draw) => new Importer(circs, arrs, data, draw),
   onCanvasReady: (draw) => {
@@ -90,9 +122,23 @@ function loadSerializedNDFSM(data: SerializedFA){
 
   if(alphabetLabel){
     alphabetLabel.textContent = "Alphabet: {"+Array.from(alphabet).join(",")+"}";
+    dispatchAlphabetUpdated();
   }
 
   if(drawRef){
     drawRef();
   }
+}
+
+// This event notifies the page that the alphabet has been updated.
+// This lets the page know if it needs to check for multi-character
+// elements in the alphabet, in which case it will show a disclaimer to
+// the user on how to submit input strings properly.
+function dispatchAlphabetUpdated() {
+  window.dispatchEvent(new CustomEvent("ndfsmAlphabetUpdated", {
+      detail: {
+        alphabet: Array.from(alphabet)
+      }
+    })
+  );
 }

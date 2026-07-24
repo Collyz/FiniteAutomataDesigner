@@ -1,4 +1,5 @@
-import Link from "next/link"
+//import Link from "next/link"
+import EditorButton from "./components/home/EditorButton";
 
 export default function Home() {
   return (
@@ -16,18 +17,18 @@ export default function Home() {
         <div className="flex space-x-10">
           
           {/* Button for DFSM */}
-          <Link href="/dfsm" passHref>
-            <button className="px-10 py-5 bg-gray-600 text-2xl text-white rounded hover:bg-black hover:shadow-lg hover:scale-105 transition-transform duration-400">
-              DFSM
-            </button>
-          </Link>
+          {/* <Link href="/dfsm" passHref> */}
+            <EditorButton 
+              type="DFSM"
+            />
+          {/* </Link> */}
 
           {/* Button for NDFSM */}
-          <Link href="/ndfsm" passHref>
-            <button className="px-10 py-5 bg-gray-600 text-2xl text-white rounded hover:bg-black hover:shadow-lg hover:scale-105 transition-transform duration-400">
-              NDFSM
-            </button>
-          </Link>
+          {/* <Link href="/ndfsm" passHref> */}
+            <EditorButton 
+              type="NDFSM"
+            />
+          {/* </Link> */}
         </div>
       </div>
     </main>
