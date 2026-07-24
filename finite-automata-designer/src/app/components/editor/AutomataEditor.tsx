@@ -42,7 +42,6 @@ interface AutomataEditorProps {
 export default function AutomataEditor({ type }: AutomataEditorProps){
 
     const [hasMultiCharAlphabet, setHasMultiCharAlphabet] = useState(false);
-    const [alphabetInput, setAlphabetInput] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState<string | null>(null);
     const [description, setDescription] = useState<string | null>(null);
@@ -109,9 +108,6 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             const customEvent = event as CustomEvent<{alphabet: string[]}>;
             const symbols = customEvent.detail.alphabet;
 
-            const alphabetString = symbols.join(',');
-            setAlphabetInput(alphabetString);
-
             const hasMulti = symbols.some(symbol => symbol.length > 1);
             setHasMultiCharAlphabet(hasMulti);
 
@@ -126,7 +122,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
             window.removeEventListener(`${type.toLowerCase()}AlphabetUpdated`, handler);
         }
 
-    }, [alphabetInput, type, automatonId]);
+    }, [type]);
 
     // Holds the toast notification subscriber
     useEffect(() => {
