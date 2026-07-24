@@ -663,6 +663,12 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         });
       }
 
+      if(alphabetLabel){
+        updateAlphabetLabel(alphabetLabel);
+        console.log("Dispatching alphabet update...");
+        config.dispatchAlphabetUpdated();
+      }
+
       if (alphabetInput) {
         alphabetInput.addEventListener("keydown", (event) => {
           // If the "Enter" key is pressed on the alphabet input
@@ -679,13 +685,14 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
 
             config.setAlphabet(new Set(normalized));
 
+            updateAlphabetLabel(alphabetLabel);
+
             config.dispatchAlphabetUpdated();
 
             console.log(config.getAlphabet());
 
             alphabetInput.value = "";
 
-            updateAlphabetLabel(alphabetLabel);
             // Notify the React page so it can show a toast confirming the alphabet updated
             showToast("Alphabet Updated!");
           }
