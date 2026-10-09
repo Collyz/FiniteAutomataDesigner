@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -41,8 +42,26 @@ export default function Navbar() {
 
   return (
     <nav className="w-full bg-gray-700 text-white px-8 py-4 flex items-center justify-between shadow">
-      <div className="text-2xl font-bold tracking-wide">
-        <Link href="/">Finite State Machine Designer</Link>
+      <div className="flex items-center space-x-4">
+        <Link href="/" className="text-2xl font-bold tracking-wide">
+          Finite State Machine Designer
+        </Link>
+        <Link
+          href="https://github.com/Collyz/FiniteAutomataDesigner"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View source on GitHub"
+          title="View source on GitHub"
+          className="opacity-70 hover:opacity-100 transition"
+        >
+          <Image
+            src="/github.svg"
+            alt="GitHub logo"
+            width={28}
+            height={28}
+            className="h-7 w-7"
+          />
+        </Link>
       </div>
       <div className="flex items-center space-x-4">
         {/* Note: you cannot use normal if-statements inside the return method lol, so use conditional operator */}
