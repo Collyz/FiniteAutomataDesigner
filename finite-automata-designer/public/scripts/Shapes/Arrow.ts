@@ -16,7 +16,7 @@ import { snapToPadding, nodeRadius, drawArrow, drawText, hitTargetPadding } from
 import { ExportAsSVG } from "../exporting/ExportAsSVG";
 import { ExportAsLaTeX } from "../exporting/ExportAsLaTeX";
 
-export var arrows: (Arrow | SelfArrow)[] = [];
+export const arrows: (Arrow | SelfArrow)[] = [];
 
 export let arrowIdCounter = 0;
 
@@ -31,10 +31,10 @@ function circleFromThreePoints(
   y2: number, 
   x3: number, 
   y3: number) {
-	var a = det(x1, y1, 1, x2, y2, 1, x3, y3, 1);
-	var bx = -det(x1*x1 + y1*y1, y1, 1, x2*x2 + y2*y2, y2, 1, x3*x3 + y3*y3, y3, 1);
-	var by = det(x1*x1 + y1*y1, x1, 1, x2*x2 + y2*y2, x2, 1, x3*x3 + y3*y3, x3, 1);
-	var c = -det(x1*x1 + y1*y1, x1, y1, x2*x2 + y2*y2, x2, y2, x3*x3 + y3*y3, x3, y3);
+	const a = det(x1, y1, 1, x2, y2, 1, x3, y3, 1);
+	const bx = -det(x1*x1 + y1*y1, y1, 1, x2*x2 + y2*y2, y2, 1, x3*x3 + y3*y3, y3, 1);
+	const by = det(x1*x1 + y1*y1, x1, 1, x2*x2 + y2*y2, x2, 1, x3*x3 + y3*y3, x3, 1);
+	const c = -det(x1*x1 + y1*y1, x1, y1, x2*x2 + y2*y2, x2, y2, x3*x3 + y3*y3, x3, y3);
 	return {
 		'x': -bx / (2*a),
 		'y': -by / (2*a),
@@ -65,6 +65,7 @@ export class Arrow {
     parallelPart: number;
     perpendicularPart: number;
     transition: Set<string>; // Set containing the transition of this arrow
+    highlighted: boolean;
 
 
     constructor(startCircle: Circle, endCircle: Circle) {
@@ -77,13 +78,14 @@ export class Arrow {
         this.parallelPart = 0.5; // percent from start to end circle
         this.perpendicularPart = 0; // pixels from start to end circle
         this.transition = new Set();
+        this.highlighted = false;
         arrowIdCounter++;
     }
 
     getAnchorPoint() {
-        var dx = this.endCircle.x - this.startCircle.x;
-        var dy = this.endCircle.y - this.startCircle.y;
-        var scale = Math.sqrt(dx * dx + dy * dy);
+        const dx = this.endCircle.x - this.startCircle.x;
+        const dy = this.endCircle.y - this.startCircle.y;
+        const scale = Math.sqrt(dx * dx + dy * dy);
         return {
             'x': this.startCircle.x + dx * this.parallelPart - dy * this.perpendicularPart / scale,
             'y': this.startCircle.y + dy * this.parallelPart + dx * this.perpendicularPart / scale
@@ -91,9 +93,9 @@ export class Arrow {
     }
 
     setAnchorPoint(x: number, y: number) {
-        var dx = this.endCircle.x - this.startCircle.x;
-        var dy = this.endCircle.y - this.startCircle.y;
-        var scale = Math.sqrt(dx * dx + dy * dy);
+        const dx = this.endCircle.x - this.startCircle.x;
+        const dy = this.endCircle.y - this.startCircle.y;
+        const scale = Math.sqrt(dx * dx + dy * dy);
         this.parallelPart = (dx * (x - this.startCircle.x) + dy * (y - this.startCircle.y)) / (scale * scale);
         this.perpendicularPart = (dx * (y - this.startCircle.y) - dy * (x - this.startCircle.x)) / scale;
         // snap to a straight line
@@ -105,10 +107,10 @@ export class Arrow {
 
     getEndPointsAndCircle() {
         if (this.perpendicularPart == 0) {
-            var midX = (this.startCircle.x + this.endCircle.x) / 2;
-            var midY = (this.startCircle.y + this.endCircle.y) / 2;
-            var start = this.startCircle.closestPointOnCircle(midX, midY);
-            var end = this.endCircle.closestPointOnCircle(midX, midY);
+            const midX = (this.startCircle.x + this.endCircle.x) / 2;
+            const midY = (this.startCircle.y + this.endCircle.y) / 2;
+            const start = this.startCircle.closestPointOnCircle(midX, midY);
+            const end = this.endCircle.closestPointOnCircle(midX, midY);
             return {
                 'hasCircle': false,
                 'startX': start.x,
@@ -118,16 +120,16 @@ export class Arrow {
             };
         }
 
-        var anchor = this.getAnchorPoint();
-        var circle = circleFromThreePoints(this.startCircle.x, this.startCircle.y, this.endCircle.x, this.endCircle.y, anchor.x, anchor.y);
-        var isReversed = (this.perpendicularPart > 0);
-        var reverseScale = isReversed ? 1 : -1;
-        var startAngle = Math.atan2(this.startCircle.y - circle.y, this.startCircle.x - circle.x) - reverseScale * nodeRadius / circle.radius;
-        var endAngle = Math.atan2(this.endCircle.y - circle.y, this.endCircle.x - circle.x) + reverseScale * nodeRadius / circle.radius;
-        var startX = circle.x + circle.radius * Math.cos(startAngle);
-        var startY = circle.y + circle.radius * Math.sin(startAngle);
-        var endX = circle.x + circle.radius * Math.cos(endAngle);
-        var endY = circle.y + circle.radius * Math.sin(endAngle);
+        const anchor = this.getAnchorPoint();
+        const circle = circleFromThreePoints(this.startCircle.x, this.startCircle.y, this.endCircle.x, this.endCircle.y, anchor.x, anchor.y);
+        const isReversed = (this.perpendicularPart > 0);
+        const reverseScale = isReversed ? 1 : -1;
+        const startAngle = Math.atan2(this.startCircle.y - circle.y, this.startCircle.x - circle.x) - reverseScale * nodeRadius / circle.radius;
+        const endAngle = Math.atan2(this.endCircle.y - circle.y, this.endCircle.x - circle.x) + reverseScale * nodeRadius / circle.radius;
+        const startX = circle.x + circle.radius * Math.cos(startAngle);
+        const startY = circle.y + circle.radius * Math.sin(startAngle);
+        const endX = circle.x + circle.radius * Math.cos(endAngle);
+        const endY = circle.y + circle.radius * Math.sin(endAngle);
         return {
             'hasCircle': true,
             'startX': startX,
@@ -146,8 +148,26 @@ export class Arrow {
 
     draw(ctx: CanvasRenderingContext2D | ExportAsSVG | ExportAsLaTeX) {
 
-        var pointInfo = this.getEndPointsAndCircle();
+        const pointInfo = this.getEndPointsAndCircle();
         // draw arc
+        if (this.highlighted && ctx instanceof CanvasRenderingContext2D) {
+            const previousStyling = ctx.fillStyle;
+            ctx.lineWidth = 10;
+            ctx.fillStyle = ctx.strokeStyle = 'yellow';
+            // draw highligted arrow
+            ctx.beginPath();
+            if (pointInfo.hasCircle && pointInfo.circleX) {
+                ctx.arc(pointInfo.circleX, pointInfo.circleY, pointInfo.circleRadius, pointInfo.startAngle, pointInfo.endAngle, pointInfo.isReversed);
+            } else {
+                ctx.moveTo(pointInfo.startX, pointInfo.startY);
+                ctx.lineTo(pointInfo.endX, pointInfo.endY);
+            }
+            ctx.stroke();
+            // reset lineWidth and styling
+            ctx.lineWidth = 3;
+            ctx.fillStyle = ctx.strokeStyle = previousStyling;
+        }
+        // draw regular arrow line
         ctx.beginPath();
         if (pointInfo.hasCircle && pointInfo.circleX) {
             ctx.arc(pointInfo.circleX, pointInfo.circleY, pointInfo.circleRadius, pointInfo.startAngle, pointInfo.endAngle, pointInfo.isReversed);
@@ -165,37 +185,37 @@ export class Arrow {
         }
 
         if (pointInfo.hasCircle) {
-            var startAngle = pointInfo.startAngle;
-            var endAngle = pointInfo.endAngle;
+            const startAngle = pointInfo.startAngle;
+            let endAngle = pointInfo.endAngle;
         if (endAngle != null && startAngle != null&& endAngle < startAngle) {
             endAngle += Math.PI * 2;
         }
         if (startAngle != null && endAngle != null && pointInfo.circleRadius != null){
-            var textAngle = (startAngle + endAngle) / 2 + (pointInfo.isReversed ? 1 : 0) * Math.PI;
-            var textX = pointInfo.circleX + pointInfo.circleRadius * Math.cos(textAngle);
-            var textY = pointInfo.circleY + pointInfo.circleRadius * Math.sin(textAngle);
+            const textAngle = (startAngle + endAngle) / 2 + (pointInfo.isReversed ? 1 : 0) * Math.PI;
+            const textX = pointInfo.circleX + pointInfo.circleRadius * Math.cos(textAngle);
+            const textY = pointInfo.circleY + pointInfo.circleRadius * Math.sin(textAngle);
             drawText(ctx, this.text, textX, textY, textAngle);
         }
         } else {
-            var textX = (pointInfo.startX + pointInfo.endX) / 2;
-            var textY = (pointInfo.startY + pointInfo.endY) / 2;
-            var textAngle = Math.atan2(pointInfo.endX - pointInfo.startX, pointInfo.startY - pointInfo.endY);
+            const textX = (pointInfo.startX + pointInfo.endX) / 2;
+            const textY = (pointInfo.startY + pointInfo.endY) / 2;
+            const textAngle = Math.atan2(pointInfo.endX - pointInfo.startX, pointInfo.startY - pointInfo.endY);
             drawText(ctx, this.text, textX, textY, textAngle + this.lineAngleAdjust);
         }
     }
 
     containsPoint(x: number, y: number) {
-        var stuff = this.getEndPointsAndCircle();
+        const stuff = this.getEndPointsAndCircle();
         if (stuff.hasCircle && stuff.circleX) {
-            var dx = x - stuff.circleX;
-            var dy = y - stuff.circleY;
-            var distance = Math.sqrt(dx * dx + dy * dy) - stuff.circleRadius;
+            const dx = x - stuff.circleX;
+            const dy = y - stuff.circleY;
+            const distance = Math.sqrt(dx * dx + dy * dy) - stuff.circleRadius;
             if (Math.abs(distance) < hitTargetPadding) {
-                var angle = Math.atan2(dy, dx);
-                var startAngle = stuff.startAngle;
-                var endAngle = stuff.endAngle;
+                let angle = Math.atan2(dy, dx);
+                let startAngle = stuff.startAngle;
+                let endAngle = stuff.endAngle;
                 if (stuff.isReversed) {
-                    var temp = startAngle;
+                    const temp = startAngle;
                     startAngle = endAngle;
                     endAngle = temp;
                 }
@@ -210,11 +230,11 @@ export class Arrow {
                 return (angle > startAngle && angle < endAngle);
             }
         } else {
-            var dx = stuff.endX - stuff.startX;
-            var dy = stuff.endY - stuff.startY;
-            var length = Math.sqrt(dx * dx + dy * dy);
-            var percent = (dx * (x - stuff.startX) + dy * (y - stuff.startY)) / (length * length);
-            var distance = (dx * (y - stuff.startY) - dy * (x - stuff.startX)) / length;
+            const dx = stuff.endX - stuff.startX;
+            const dy = stuff.endY - stuff.startY;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const percent = (dx * (x - stuff.startX) + dy * (y - stuff.startY)) / (length * length);
+            const distance = (dx * (y - stuff.startY) - dy * (x - stuff.startX)) / length;
             return (percent > 0 && percent < 1 && Math.abs(distance) < hitTargetPadding);
         }
         return false;

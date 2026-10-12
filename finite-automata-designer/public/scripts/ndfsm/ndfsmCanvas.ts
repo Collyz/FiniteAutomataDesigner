@@ -85,6 +85,7 @@ initFsmCanvas({
   automatonLabel: "NDFSM",
   canvasId: "NDFSMCanvas",
   runBtnId: "ndfsmRunBtn",
+  walkBtnId: "ndfsmWalkBtn",
   runAlgo: ndfsmAlgo,
   commitTransition,
   getAlphabet: () => alphabet,
@@ -100,7 +101,8 @@ initFsmCanvas({
       pendingNDFSM = null;
       draw();
     }
-  }
+  },
+  disabled: false,
 });
 
 function loadSerializedNDFSM(data: SerializedFA){

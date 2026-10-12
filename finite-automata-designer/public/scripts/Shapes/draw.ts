@@ -30,9 +30,9 @@ export const greekLettersUpper = [
   'Ι', 'Κ', 'Λ', 'Μ', 'Ν', 'Ξ', 'Ο', 'Π',
   'Ρ', 'Σ', 'Τ', 'Υ', 'Φ', 'Χ', 'Ψ', 'Ω'
 ];
-export let nodeRadius = 30;
-export let snapToPadding = 10; // pixels
-export let hitTargetPadding = 6; // pixels
+export const nodeRadius = 30;
+export const snapToPadding = 10; // pixels
+export const hitTargetPadding = 6; // pixels
 
 // Takes LaTeX-like plain text and converts to Unicode symbols
 // Handles Greek letters and subscripts
@@ -42,7 +42,7 @@ function convertText(text: string) {
 
   // Greek letter conversion
   for (let i = 0; i < greekLetterNames.length; i++) {
-    let name = greekLetterNames[i];
+    const name = greekLetterNames[i];
 
     // Regex: '\\\\' matches a literal backslash "\" in text.
     // 'g' flag -> replace all not just first instance
@@ -69,16 +69,16 @@ export function drawText(
   angeOrNull: number | null,
 ) {
   ctx.font = '20px Times New Roman', 'serif';
-  let text = convertText(originalText); // Convert all of the text in one go both subscript and greek
-  let width = ctx.measureText(text).width;
+  const text = convertText(originalText); // Convert all of the text in one go both subscript and greek
+  const width = ctx.measureText(text).width;
   x -= width / 2;
 
   if (angeOrNull != null) {
-    let cos = Math.cos(angeOrNull);
-    let sin = Math.sin(angeOrNull);
-    let cornerPointX = (width / 2 + 5) * (cos > 0 ? 1 : -1);
-		let cornerPointY = (10 + 5) * (sin > 0 ? 1 : -1);
-		let slide = sin * Math.pow(Math.abs(sin), 40) * cornerPointX - cos * Math.pow(Math.abs(cos), 10) * cornerPointY;
+    const cos = Math.cos(angeOrNull);
+    const sin = Math.sin(angeOrNull);
+    const cornerPointX = (width / 2 + 5) * (cos > 0 ? 1 : -1);
+		const cornerPointY = (10 + 5) * (sin > 0 ? 1 : -1);
+		const slide = sin * Math.pow(Math.abs(sin), 40) * cornerPointX - cos * Math.pow(Math.abs(cos), 10) * cornerPointY;
 		x += cornerPointX - sin * slide;
 		y += cornerPointY + cos * slide;
   }
@@ -95,8 +95,8 @@ export function drawText(
 }
 
 export function drawArrow(ctx: CanvasRenderingContext2D | BaseDrawContext, x: number, y: number, angle: number) {
-  let dx = Math.cos(angle);
-  let dy = Math.sin(angle);
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
   ctx.beginPath();
   ctx.moveTo(x, y);
   ctx.lineTo(x - 10 * dx + 5 * dy, y - 8 * dy - 5 * dx);

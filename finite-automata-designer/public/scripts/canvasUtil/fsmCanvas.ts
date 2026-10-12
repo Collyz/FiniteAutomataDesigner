@@ -37,6 +37,8 @@ export interface FsmCanvasConfig {
   canvasId: string;
   // id of the Run button for this automaton's page
   runBtnId: string;
+  // id of the Walk Through visualizer button for this automaton's page
+  walkBtnId: string;
   // Runs the automaton against an input string
   runAlgo: (input: string) => void;
   // Validates/commits a finished transition label. Returns false when rejected.
@@ -56,6 +58,8 @@ export interface FsmCanvasConfig {
   ) => FsmImporter;
   // Called every time the canvas is (re)mounted, right after the first repaint
   onCanvasReady?: (draw: () => void) => void;
+  // Controls interaction with the canvas
+  disabled: boolean;
 }
 
 // Empties the automaton and wipes the canvas.
@@ -115,13 +119,14 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
   let dragging = false; // True dragging objects is enabled, false otherwise
   let startClick: {x: number, y: number} | null = null;
   let tempArrow: TemporaryArrow | Arrow | SelfArrow | EntryArrow | null = null; // A new arrow being created
+  let disabled = false;
 
   function setupCanvas(canvas: HTMLCanvasElement, signal: AbortSignal) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return { draw: () => {} };
 
     function draw() {
-      if (!ctx) return;
+      if (!ctx || disabled) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
 
@@ -129,12 +134,14 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       for (let circle = 0; circle < circles.length; circle++) {
         ctx.lineWidth= 1;
         ctx.fillStyle = ctx.strokeStyle = (circles[circle] == selectedObj) ? hightlightSelected : base;
+        circles[circle].highlighted = circles[circle] == selectedObj;
         circles[circle].draw(ctx);
       }
 
       // Iterate through ALL Arrows and SelfArrows and draw each one
       for (let arrow = 0; arrow < arrows.length; arrow++) {
         ctx.lineWidth = 1;
+        arrows[arrow].highlighted = arrows[arrow] == selectedObj;
         ctx.fillStyle = ctx.strokeStyle = (arrows[arrow] == selectedObj) ? hightlightSelected : base;
         arrows[arrow].draw(ctx);
       }
@@ -143,6 +150,9 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       if(startState){
         ctx.lineWidth = 1;
         ctx.fillStyle = ctx.strokeStyle = (startState == selectedObj) ? hightlightSelected : base;
+        if (startState instanceof EntryArrow) {
+          startState.highlighted = startState == selectedObj
+        }
         startState.draw(ctx);
       }
 
@@ -158,6 +168,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
     // If a mouse button is pressed down
     canvas.addEventListener('mousedown', (event: MouseEvent) => {
       event.preventDefault();
+      if (disabled) return;
 
       const mouse = getMousePos(event);
 
@@ -200,6 +211,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
 
     // If mouse is double-clicked
     canvas.addEventListener('dblclick', (event) => {
+      if (disabled) return;
       const mouse = getMousePos(event);
       selectedObj = mouseCollision(mouse.x, mouse.y);
 
@@ -220,6 +232,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
 
     // If mouse moves
     canvas.addEventListener('mousemove', (event) => {
+      if (disabled) return;
       const mouse = getMousePos(event);
 
       // If a new TemporaryArrow has been created, the
@@ -260,6 +273,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
     // If the mouse was originally clicked and now
     // the user let go
     canvas.addEventListener('mouseup', () =>{
+      if (disabled) return;
       dragging = false;
 
       if (tempArrow != null) {
@@ -320,6 +334,8 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       if (!canvasHasFocus()) {
         return true;
       }
+
+      if (disabled) return;
 
       // If we are currently selecting an object AND
       // if the currently selected object has a "text"
@@ -431,6 +447,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
     // If the arrow is being deleted, then update the
     // circles that it is associated with
     function deleteArrow(arrow: Arrow | SelfArrow | EntryArrow, index: number){
+      if (disabled) return;
       if(arrow instanceof Arrow){
         arrow.startCircle.outArrows.delete(arrow);
       }
@@ -548,6 +565,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
   // Simplifies the finalization for the transition of an edited arrow
   function finalizeEditedArrow(nextSelected: unknown | null) {
     if (!lastEditedArrow) return;
+    if (disabled) return;
 
     // If the previously edited object was an Arrow or SelfArrow, AND if the currently
     // selected object is different from the previous edited Arrow or SelfArrow,
@@ -620,6 +638,8 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       const clearCanvasBtn = document.getElementById('clearCanvas') as HTMLButtonElement | null;
       // Run button
       const runBtn = document.getElementById(config.runBtnId) as HTMLButtonElement | null;
+      // Walkthrough Visualizer button
+      const walkBtn = document.getElementById(config.walkBtnId) as HTMLButtonElement | null;
       // Print button - renders the current FSM through the SVG exporter
       const printBtn = document.getElementById('printCanvas') as HTMLButtonElement | null;
       // Reference to draw function
@@ -824,6 +844,21 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
           }
         }, { signal });
       }
+
+      // Walkthrough Visualizer Button
+      if (walkBtn) {
+        walkBtn.addEventListener("click", () => {
+          // Run the automaton check with a visualization for the user created automation
+          if (inputString) {
+            config.runAlgo(inputString.value);
+            // Reset the input field
+            inputString.value = "";
+            disabled = !disabled;
+            console.debug("State of disabled: ", disabled);
+          }
+        }, { signal });
+      }
+
 
       // Clear Canvas button
       if (clearCanvasBtn) {

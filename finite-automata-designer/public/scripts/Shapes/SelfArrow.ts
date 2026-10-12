@@ -32,7 +32,8 @@ export class SelfArrow {
   mouseOffsetAngle: number;
   text: string; // The text (transition) of the Arrow that will be displayed
   transition: Set<string>; // Set containing the transition of this arrow
-  point: {x: number, y: number}
+  point: {x: number, y: number};
+  highlighted: boolean;
 
   constructor(pointsToCircle: Circle, point: {x: number, y: number}) {
     this.id = 'a' + arrowIdCounter;
@@ -44,6 +45,7 @@ export class SelfArrow {
     this.text = ''; 
     this.transition = new Set();
     this.point = point;
+    this.highlighted = false;
     incrementArrowIdCounter();
     
 
@@ -53,15 +55,27 @@ export class SelfArrow {
   }
 
   draw(ctx: CanvasRenderingContext2D | ExportAsSVG | ExportAsLaTeX) {
-    var arcInfo = this.getEndPointsAndCircle();
+    const arcInfo = this.getEndPointsAndCircle();
+    if (this.highlighted && ctx instanceof CanvasRenderingContext2D) {
+      const previousStyling = ctx.fillStyle;
+      ctx.lineWidth = 10;
+      ctx.fillStyle = ctx.strokeStyle = 'yellow';
+      // draw highlighted arrow
+      ctx.beginPath();
+      ctx.arc(arcInfo.circleX, arcInfo.circleY, arcInfo.circleRadius, arcInfo.startAngle, arcInfo.endAngle, false);
+      ctx.stroke();
+      // reset lineWidth and styling
+      ctx.lineWidth = 3;
+      ctx.fillStyle = ctx.strokeStyle = previousStyling;
+    }
     // draw arc
     ctx.beginPath();
     ctx.arc(arcInfo.circleX, arcInfo.circleY, arcInfo.circleRadius, arcInfo.startAngle, arcInfo.endAngle, false);
     ctx.stroke();
     
     // Draw the text on the loop farthest from the circle
-    var textX = arcInfo.circleX + arcInfo.circleRadius * Math.cos(this.anchorAngle);
-    var textY = arcInfo.circleY + arcInfo.circleRadius * Math.sin(this.anchorAngle);
+    const textX = arcInfo.circleX + arcInfo.circleRadius * Math.cos(this.anchorAngle);
+    const textY = arcInfo.circleY + arcInfo.circleRadius * Math.sin(this.anchorAngle);
     drawText(ctx, this.text, textX, textY, this.anchorAngle);
     // draw the head of the arrow
     drawArrow(ctx, arcInfo.endX, arcInfo.endY, arcInfo.endAngle + Math.PI * 0.4);
@@ -74,22 +88,22 @@ export class SelfArrow {
   setAnchorPoint(x: number, y: number) {
     this.anchorAngle = Math.atan2(y - this.circle.y, x - this.circle.x) + this.mouseOffsetAngle;
     // snap to 90 degrees
-    var snap = Math.round(this.anchorAngle / (Math.PI / 2)) * (Math.PI / 2);
+    const snap = Math.round(this.anchorAngle / (Math.PI / 2)) * (Math.PI / 2);
     if (Math.abs(this.anchorAngle - snap) < 0.1) this.anchorAngle = snap;
     // keep in the range -pi to pi so our containsPoint() function always works
     if (this.anchorAngle < -Math.PI) this.anchorAngle += 2 * Math.PI;
     if (this.anchorAngle > Math.PI) this.anchorAngle -= 2 * Math.PI;
   }
   getEndPointsAndCircle() {
-    var circleX = this.circle.x + 1.5 * nodeRadius * Math.cos(this.anchorAngle);
-    var circleY = this.circle.y + 1.5 * nodeRadius * Math.sin(this.anchorAngle);
-    var circleRadius = 0.75 * nodeRadius;
-    var startAngle = this.anchorAngle - Math.PI * 0.8;
-    var endAngle = this.anchorAngle + Math.PI * 0.8;
-    var startX = circleX + circleRadius * Math.cos(startAngle);
-    var startY = circleY + circleRadius * Math.sin(startAngle);
-    var endX = circleX + circleRadius * Math.cos(endAngle);
-    var endY = circleY + circleRadius * Math.sin(endAngle);
+    const circleX = this.circle.x + 1.5 * nodeRadius * Math.cos(this.anchorAngle);
+    const circleY = this.circle.y + 1.5 * nodeRadius * Math.sin(this.anchorAngle);
+    const circleRadius = 0.75 * nodeRadius;
+    const startAngle = this.anchorAngle - Math.PI * 0.8;
+    const endAngle = this.anchorAngle + Math.PI * 0.8;
+    const startX = circleX + circleRadius * Math.cos(startAngle);
+    const startY = circleY + circleRadius * Math.sin(startAngle);
+    const endX = circleX + circleRadius * Math.cos(endAngle);
+    const endY = circleY + circleRadius * Math.sin(endAngle);
     return {
         'hasCircle': true,
         'startX': startX,
@@ -104,10 +118,10 @@ export class SelfArrow {
     };
   }
   containsPoint(x: number, y:number) {
-    var stuff = this.getEndPointsAndCircle();
-    var dx = x - stuff.circleX;
-    var dy = y - stuff.circleY;
-    var distance = Math.sqrt(dx * dx + dy * dy) - stuff.circleRadius;
+    const stuff = this.getEndPointsAndCircle();
+    const dx = x - stuff.circleX;
+    const dy = y - stuff.circleY;
+    const distance = Math.sqrt(dx * dx + dy * dy) - stuff.circleRadius;
     return (Math.abs(distance) < hitTargetPadding);
   }
 }
