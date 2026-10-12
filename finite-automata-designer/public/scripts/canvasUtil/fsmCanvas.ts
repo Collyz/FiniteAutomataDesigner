@@ -877,8 +877,6 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
           if (!inputString || !drawRef || disabled) return;
           const draw = drawRef;
           const input = inputString.value;
-          // Reset the input field
-          inputString.value = "";
 
           // Lock the canvas and drop the user's selection so only the walkthrough is highlighted
           finalizeEditedArrow(null);
@@ -898,6 +896,8 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
             walkHighlights = new Set();
             disabled = false;
             draw();
+            // Reset the input field
+            inputString.value = "";
           }
         }, { signal });
       }
