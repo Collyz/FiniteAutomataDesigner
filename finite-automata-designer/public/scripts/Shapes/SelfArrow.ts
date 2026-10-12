@@ -65,7 +65,7 @@ export class SelfArrow {
       ctx.arc(arcInfo.circleX, arcInfo.circleY, arcInfo.circleRadius, arcInfo.startAngle, arcInfo.endAngle, false);
       ctx.stroke();
       // reset lineWidth and styling
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.fillStyle = ctx.strokeStyle = previousStyling;
     }
     // draw arc

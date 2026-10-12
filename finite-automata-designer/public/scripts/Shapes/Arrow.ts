@@ -164,7 +164,7 @@ export class Arrow {
             }
             ctx.stroke();
             // reset lineWidth and styling
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.fillStyle = ctx.strokeStyle = previousStyling;
         }
         // draw regular arrow line

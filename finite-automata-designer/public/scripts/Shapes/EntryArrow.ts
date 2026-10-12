@@ -61,7 +61,7 @@ export class EntryArrow {
       ctx.lineTo(points.endX, points.endY);
       ctx.stroke();
       // reset lineWidth and styling
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2;
       ctx.fillStyle = ctx.strokeStyle = previousStyling;
     }
 

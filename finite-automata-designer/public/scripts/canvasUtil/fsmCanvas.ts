@@ -40,7 +40,7 @@ export interface FsmCanvasConfig {
   // id of the Walk Through visualizer button for this automaton's page
   walkBtnId: string;
   // Runs the automaton against an input string
-  runAlgo: (input: string) => void;
+  runAlgo: (input: string, disabled: boolean, drawFunc: (() => void) | null) => void;
   // Validates/commits a finished transition label. Returns false when rejected.
   commitTransition: (arrow: Arrow | SelfArrow | null) => boolean;
   // The alphabet and validator are reassignable module bindings, so they must
@@ -678,7 +678,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
           if (event.key === "Enter") {
             event.preventDefault();
 
-            config.runAlgo(inputString.value);
+            config.runAlgo(inputString.value, false, null);
 
             // Reset the input tag
             inputString.value = "";
@@ -838,7 +838,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         runBtn.addEventListener("click", () => {
           // Run the automaton check for the user created automaton
           if (inputString) {
-            config.runAlgo(inputString.value);
+            config.runAlgo(inputString.value, false, null);
             // Reset the input tag
             inputString.value = "";
           }
@@ -850,10 +850,10 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         walkBtn.addEventListener("click", () => {
           // Run the automaton check with a visualization for the user created automation
           if (inputString) {
-            config.runAlgo(inputString.value);
+            config.runAlgo(inputString.value, disabled, drawRef);
             // Reset the input field
             inputString.value = "";
-            disabled = !disabled;
+            disabled = true;
             console.debug("State of disabled: ", disabled);
           }
         }, { signal });
