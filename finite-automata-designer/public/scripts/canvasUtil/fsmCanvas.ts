@@ -30,6 +30,12 @@ export interface FsmImporter {
   convert(): boolean;
 }
 
+export type CanvasObject = Circle | EntryArrow | Arrow | SelfArrow;
+
+// Called by the run algorithm at each step of a walkthrough: highlights the
+// given objects, redraws, and resolves once the step delay has elapsed.
+export type WalkStep = (objs: CanvasObject[]) => Promise<void>;
+
 export interface FsmCanvasConfig {
   // "DFSM" or "NDFSM" — used in export headers and user-facing messages
   automatonLabel: "DFSM" | "NDFSM";
@@ -39,8 +45,9 @@ export interface FsmCanvasConfig {
   runBtnId: string;
   // id of the Walk Through visualizer button for this automaton's page
   walkBtnId: string;
-  // Runs the automaton against an input string
-  runAlgo: (input: string, disabled: boolean, drawFunc: (() => void) | null) => void;
+  // Runs the automaton against an input string. When step is non-null the run
+  // is a walkthrough and the algorithm awaits step() at each state/transition.
+  runAlgo: (input: string, step: WalkStep | null) => Promise<boolean>;
   // Validates/commits a finished transition label. Returns false when rejected.
   commitTransition: (arrow: Arrow | SelfArrow | null) => boolean;
   // The alphabet and validator are reassignable module bindings, so they must
@@ -113,7 +120,11 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
   // indicate that the user has submitted their transition.
   let lastEditedArrow: Arrow | SelfArrow | null = null;
 
-  let selectedObj: Circle | EntryArrow | Arrow | SelfArrow | null = null; // Currently selected object
+  let selectedObj: CanvasObject | null = null; // Currently selected object
+  let walkHighlights: Set<CanvasObject> = new Set(); // Objects highlighted by the current walkthrough step
+  // How long each walkthrough step stays on screen (ms). Set by the walkthrough
+  // delay slider and read on every step, so it can be changed mid-walkthrough.
+  let walkStepMs = 1000;
   const hightlightSelected = 'blue'; // Blue highlight for objects for regular selection
   const base = 'black'; // Black highlight for objects to indicate that they are not being selected
   let dragging = false; // True dragging objects is enabled, false otherwise
@@ -126,32 +137,35 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
     if (!ctx) return { draw: () => {} };
 
     function draw() {
-      if (!ctx || disabled) return;
+      if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
+
+      // An object is highlighted if the user selected it or the walkthrough is on it
+      const isHighlighted = (obj: CanvasObject) => obj == selectedObj || walkHighlights.has(obj);
 
       // Iterate through ALL circles and draw each one
       for (let circle = 0; circle < circles.length; circle++) {
         ctx.lineWidth= 1;
-        ctx.fillStyle = ctx.strokeStyle = (circles[circle] == selectedObj) ? hightlightSelected : base;
-        circles[circle].highlighted = circles[circle] == selectedObj;
+        ctx.fillStyle = ctx.strokeStyle = isHighlighted(circles[circle]) ? hightlightSelected : base;
+        circles[circle].highlighted = isHighlighted(circles[circle]);
         circles[circle].draw(ctx);
       }
 
       // Iterate through ALL Arrows and SelfArrows and draw each one
       for (let arrow = 0; arrow < arrows.length; arrow++) {
         ctx.lineWidth = 1;
-        arrows[arrow].highlighted = arrows[arrow] == selectedObj;
-        ctx.fillStyle = ctx.strokeStyle = (arrows[arrow] == selectedObj) ? hightlightSelected : base;
+        arrows[arrow].highlighted = isHighlighted(arrows[arrow]);
+        ctx.fillStyle = ctx.strokeStyle = isHighlighted(arrows[arrow]) ? hightlightSelected : base;
         arrows[arrow].draw(ctx);
       }
 
       // If there is an EntryArrow, then draw it
       if(startState){
         ctx.lineWidth = 1;
-        ctx.fillStyle = ctx.strokeStyle = (startState == selectedObj) ? hightlightSelected : base;
+        ctx.fillStyle = ctx.strokeStyle = isHighlighted(startState) ? hightlightSelected : base;
         if (startState instanceof EntryArrow) {
-          startState.highlighted = startState == selectedObj
+          startState.highlighted = isHighlighted(startState);
         }
         startState.draw(ctx);
       }
@@ -524,6 +538,13 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
     }
   }
 
+  // Updates the walkthrough delay label to reflect the current step delay
+  function updateWalkDelayLabel(walkDelayLabel: HTMLLabelElement | null) {
+    if(walkDelayLabel){
+      walkDelayLabel.textContent = "Walkthrough Delay: " + (walkStepMs / 1000).toFixed(1) + "s";
+    }
+  }
+
   function importHelper(
     canvas: HTMLCanvasElement | null,
     drawImportBtn: HTMLButtonElement | null,
@@ -640,6 +661,9 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       const runBtn = document.getElementById(config.runBtnId) as HTMLButtonElement | null;
       // Walkthrough Visualizer button
       const walkBtn = document.getElementById(config.walkBtnId) as HTMLButtonElement | null;
+      // Slider and label for the delay between walkthrough steps
+      const walkDelaySlider = document.getElementById('walkDelay') as HTMLInputElement | null;
+      const walkDelayLabel = document.getElementById('walkDelayLabel') as HTMLLabelElement | null;
       // Print button - renders the current FSM through the SVG exporter
       const printBtn = document.getElementById('printCanvas') as HTMLButtonElement | null;
       // Reference to draw function
@@ -677,8 +701,9 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
           // If the "Enter" key is pressed on the input string
           if (event.key === "Enter") {
             event.preventDefault();
+            if (disabled) return; // Prevent new input strings during a walkthrough
 
-            config.runAlgo(inputString.value, false, null);
+            config.runAlgo(inputString.value, null);
 
             // Reset the input tag
             inputString.value = "";
@@ -837,8 +862,8 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       if (runBtn) {
         runBtn.addEventListener("click", () => {
           // Run the automaton check for the user created automaton
-          if (inputString) {
-            config.runAlgo(inputString.value, false, null);
+          if (inputString && !disabled) {
+            config.runAlgo(inputString.value, null);
             // Reset the input tag
             inputString.value = "";
           }
@@ -847,15 +872,45 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
 
       // Walkthrough Visualizer Button
       if (walkBtn) {
-        walkBtn.addEventListener("click", () => {
+        walkBtn.addEventListener("click", async () => {
           // Run the automaton check with a visualization for the user created automation
-          if (inputString) {
-            config.runAlgo(inputString.value, disabled, drawRef);
-            // Reset the input field
-            inputString.value = "";
-            disabled = true;
-            console.debug("State of disabled: ", disabled);
+          if (!inputString || !drawRef || disabled) return;
+          const draw = drawRef;
+          const input = inputString.value;
+          // Reset the input field
+          inputString.value = "";
+
+          // Lock the canvas and drop the user's selection so only the walkthrough is highlighted
+          finalizeEditedArrow(null);
+          disabled = true;
+          selectedObj = null;
+          dragging = false;
+
+          const step: WalkStep = async (objs) => {
+            walkHighlights = new Set(objs);
+            draw();
+            await new Promise((resolve) => setTimeout(resolve, walkStepMs));
+          };
+
+          try {
+            await config.runAlgo(input, step);
+          } finally {
+            walkHighlights = new Set();
+            disabled = false;
+            draw();
           }
+        }, { signal });
+      }
+
+      // Walkthrough delay slider
+      if (walkDelaySlider) {
+        // Restore the current delay when the canvas is remounted
+        walkDelaySlider.value = String(walkStepMs);
+        updateWalkDelayLabel(walkDelayLabel);
+
+        walkDelaySlider.addEventListener("input", () => {
+          walkStepMs = Number(walkDelaySlider.value);
+          updateWalkDelayLabel(walkDelayLabel);
         }, { signal });
       }
 
@@ -863,6 +918,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       // Clear Canvas button
       if (clearCanvasBtn) {
         clearCanvasBtn.addEventListener("click", () => {
+          if (disabled) return; // prevent clearing mid walkthrough 
           clearAutomaton(canvas);
           showToast('Canvas Cleared!')
         }, { signal })

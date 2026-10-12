@@ -3,6 +3,7 @@ import { alphabet, ndfsmTransitionSymbols, transitionLabelInputValidator } from 
 import { Arrow, arrows } from "../../../public/scripts/Shapes/Arrow";
 import { SelfArrow } from "../../../public/scripts/Shapes/SelfArrow";
 import { startState } from "../../../public/scripts/Shapes/EntryArrow";
+import type { WalkStep } from "../../../public/scripts/canvasUtil/fsmCanvas";
 import { Queue } from "../data-structures/";
 import { parseInputString } from "../input/InputStringLexer";
 import { showToast } from "../toast";
@@ -106,9 +107,10 @@ function epsilonTransitions(pointer: Circle, nextPointers: Set<Circle>){
 
 } 
 
-// This function runs the NDFSM algorithm on the given input string
-export function ndfsmAlgo(input: string){
-
+// This function runs the NDFSM algorithm on the given input string.
+// If step is provided, the run is a walkthrough: the set of active states and
+// the transitions taken out of them are highlighted in turn.
+export async function ndfsmAlgo(input: string, step: WalkStep | null){
   // Check if there is a start state and at least one accept state
   let acceptStateExists: boolean = false;
   for(const circle of circles){
@@ -156,6 +158,12 @@ export function ndfsmAlgo(input: string){
     return false;
   }
 
+  // Walkthrough: show the entry arrow, then the start state with its epsilon closure
+  if(step){
+    await step([startState]);
+    await step([...nextPointers]);
+  }
+
   // We begin traversing the input string.
   for(const char of tokens){
     // console.log("Processing character: " + char);
@@ -163,6 +171,9 @@ export function ndfsmAlgo(input: string){
     // This is because we don't want to modify the set while iterating over it.
     const currPointers : Set<Circle> = new Set(nextPointers);
     nextPointers.clear();
+
+    // Every transition taken on this character, across all active states
+    const takenArrows: (Arrow | SelfArrow)[] = [];
 
     for(const pointer of currPointers){
       if(pointer !== undefined){
@@ -182,18 +193,25 @@ export function ndfsmAlgo(input: string){
           if(arrow.transition.has(char)){
             // console.log("Taking transition: " + Array.from(arrow.transition).toString() + " to node " + arrow.endCircle.text);
 
-            // We add the endCircle to the nextPointers set, since we will 
+            // We add the endCircle to the nextPointers set, since we will
             // iterate over it in the next round.
             nextPointers.add(arrow.endCircle);
+            takenArrows.push(arrow);
 
             // We also perform epsilon closure from the new state
             epsilonTransitions(arrow.endCircle, nextPointers);
-          
+
           }
         }
         // console.log("Leaving state: " + pointer.text);
-        
+
       }
+    }
+
+    // Walkthrough: show the transitions taken, then the new set of active states
+    if(step){
+      await step(takenArrows);
+      await step([...nextPointers]);
     }
   }
 

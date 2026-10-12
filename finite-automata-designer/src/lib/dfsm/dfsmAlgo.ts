@@ -3,6 +3,7 @@ import { alphabet, transitionLabelInputValidator } from "./dfsmTransitionSymbols
 import { Arrow } from "../../../public/scripts/Shapes/Arrow";
 import { SelfArrow } from "../../../public/scripts/Shapes/SelfArrow";
 import { startState } from "../../../public/scripts/Shapes/EntryArrow";
+import type { WalkStep } from "../../../public/scripts/canvasUtil/fsmCanvas";
 import { parseInputString } from "../input/InputStringLexer";
 import { showToast } from "../toast";
 
@@ -169,7 +170,9 @@ export function inputDeterminismCheck(){
   return true;
 }
 
-export function dfsmAlgo(input: string){
+// Runs the DFSM on the given input string. If step is provided, the run is a
+// walkthrough: each state and each transition taken is highlighted in turn.
+export async function dfsmAlgo(input: string, step: WalkStep | null){
   let acceptStateExists: boolean = false;
   for(const circle of circles){
     if(circle.isAccept){
@@ -207,6 +210,12 @@ export function dfsmAlgo(input: string){
     return false;
   }
 
+  // Walkthrough: show the entry arrow, then the start state
+  if(step){
+    await step([startState]);
+    await step([curr]);
+  }
+
   // We begin traversing the input string.
   for(const char of tokens){
 
@@ -224,6 +233,12 @@ export function dfsmAlgo(input: string){
       if(arrow.transition.has(char)){
         //console.log("Taking transition: " + arrow.transition + " to node " + arrow.endCircle.text);
         curr = arrow.endCircle;
+
+        // Walkthrough: show the transition taken, then the state it lands on
+        if(step){
+          await step([arrow]);
+          await step([curr]);
+        }
         break;
       }
       else{
