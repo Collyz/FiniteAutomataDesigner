@@ -89,6 +89,7 @@ initFsmCanvas({
   automatonLabel: "DFSM",
   canvasId: "DFSMCanvas",
   runBtnId: "dfsmRunBtn",
+  walkBtnId: "dfsmWalkBtn",
   //alphabetUpdatedEventName: "dfsmAlphabetUpdated",
   runAlgo: dfsmAlgo,
   commitTransition: transitionDeterminismCheck,
@@ -106,6 +107,7 @@ initFsmCanvas({
       draw();
     }
   },
+  disabled: false,
 });
 
 function loadSerializedDFSM(data: SerializedFA){

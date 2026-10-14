@@ -16,7 +16,7 @@ import { ExportAsLaTeX } from "../exporting/ExportAsLaTeX";
 import { ExportAsSVG } from "../exporting/ExportAsSVG";
 import {SelfArrow} from "./SelfArrow";
 
-export let circles: Circle[] = [];
+export const circles: Circle[] = [];
 export let circleIdCounter = 0;
 
 export class Circle {
@@ -29,6 +29,7 @@ export class Circle {
   text: string; // The name of this state that will be displayed
   outArrows: Set<Arrow | SelfArrow>; // The outgoing transitions of this state
   loop: SelfArrow | null; // The SelfArrow which loops back to this state, if it exists
+  highlighted: boolean;
 
   constructor(x: number, y: number) {
     this.id = 'c' + circleIdCounter;
@@ -40,6 +41,7 @@ export class Circle {
     this.text = ''; 
     this.outArrows = new Set(); 
     this.loop = null; 
+    this.highlighted = false;
     // Increment ID
     circleIdCounter++;
   }
@@ -55,6 +57,19 @@ export class Circle {
   }
 
   draw(ctx: CanvasRenderingContext2D | ExportAsSVG | ExportAsLaTeX) {
+    if (this.highlighted && ctx instanceof CanvasRenderingContext2D) {
+      const previousStyling = ctx.fillStyle;
+      ctx.lineWidth = 10;
+      ctx.fillStyle = ctx.strokeStyle = 'yellow';
+      // draw highlighted circle
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, nodeRadius, 0, 2 * Math.PI, false);
+      ctx.stroke();
+      
+      // reset lineWidth and styling
+      ctx.lineWidth = 2;
+      ctx.fillStyle = ctx.strokeStyle = previousStyling;
+    }
     ctx.beginPath();
     ctx.arc(this.x, this.y, nodeRadius, 0, 2 * Math.PI, false);
     ctx.stroke();
@@ -69,9 +84,9 @@ export class Circle {
   }
 
   closestPointOnCircle(x: number, y: number) {
-    var dx = x - this.x;
-    var dy = y - this.y;
-    var scale = Math.sqrt(dx * dx + dy * dy);
+    const dx = x - this.x;
+    const dy = y - this.y;
+    const scale = Math.sqrt(dx * dx + dy * dy);
     return {
       'x': this.x + dx * nodeRadius / scale,
       'y': this.y + dy * nodeRadius / scale

@@ -18,6 +18,8 @@ import InputString from "./InputString";
 import AlphabetInput from "./alphabet/AlphabetInput";
 import AlphabetLabel from "./alphabet/AlphabetLabel";
 import RunButton from "./RunButton";
+import WalkButton from './WalkButton';
+import WalkDelaySlider from './WalkDelaySlider';
 import ProjectsButton from "./ProjectsButton";
 import ClearCanvasButton from "./ClearCanvasButton";
 import BackButton from "./BackButton";
@@ -370,6 +372,11 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                                         <RunButton type={type.toUpperCase() as "DFSM" | "NDFSM"}/>
                                         {/* Clear Canvas parent container */}
                                         <ClearCanvasButton />
+                                        <WalkButton type={type.toUpperCase() as "DFSM" | "NDFSM"} />
+                                    </div>
+                                    {/* Slider for the delay between walkthrough steps */}
+                                    <div className="pt-3">
+                                        <WalkDelaySlider />
                                     </div>
                                 </div>
                             </div>

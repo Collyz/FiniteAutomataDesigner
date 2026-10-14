@@ -21,7 +21,7 @@ import { ExportAsSVG } from "../exporting/ExportAsSVG";
 // Since we are not storing the EntryArrow itself as an
 // attribute for Circles, it was best that the startState
 // was set to the EntryArrow instead of its Circle
-export var startState: EntryArrow|null = null;
+export let startState: EntryArrow|null = null;
 
 // Since the startState will be imported, it cannot be reassigned
 // as usual, so this setter method will enable you to do so
@@ -34,7 +34,8 @@ export class EntryArrow {
   deltaX: number;
   deltaY: number;
   // text: string;
-  startPoint: {x: number, y: number}
+  startPoint: {x: number, y: number};
+  highlighted: boolean;
 
   constructor(pointsToCircle: Circle, startPoint: {x: number, y: number}) {
     this.pointsToCircle = pointsToCircle;
@@ -45,10 +46,24 @@ export class EntryArrow {
     if (startPoint) {
       this.setAnchorPoint(startPoint.x, startPoint.y);
     }
+    this.highlighted = false;
   }
 
   draw(ctx: CanvasRenderingContext2D | ExportAsSVG | ExportAsLaTeX) {
-    var points = this.getEndPoints();
+    const points = this.getEndPoints();
+    if (this.highlighted && ctx instanceof CanvasRenderingContext2D) {
+      const previousStyling = ctx.fillStyle;
+      ctx.lineWidth = 10;
+      ctx.fillStyle = ctx.strokeStyle = 'yellow';
+      // draw highlighted arrow
+      ctx.beginPath();
+      ctx.moveTo(points.startX, points.startY);
+      ctx.lineTo(points.endX, points.endY);
+      ctx.stroke();
+      // reset lineWidth and styling
+      ctx.lineWidth = 2;
+      ctx.fillStyle = ctx.strokeStyle = previousStyling;
+    }
 
     ctx.beginPath();
     ctx.moveTo(points.startX, points.startY);
@@ -56,7 +71,7 @@ export class EntryArrow {
     ctx.stroke();
     
     // Draw the text at the end without the fillrow
-    var textAngle = Math.atan2(points.startY - points.endY, points.startX - points.endX);
+    const textAngle = Math.atan2(points.startY - points.endY, points.startX - points.endX);
     drawText(ctx, "", points.startX, points.startY, textAngle);
 
     // Draw the head of the arrow
@@ -72,9 +87,9 @@ export class EntryArrow {
   }
 
   getEndPoints() {
-    var startX = this.pointsToCircle.x + this.deltaX;
-    var startY = this.pointsToCircle.y + this.deltaY;
-    var end = this.pointsToCircle.closestPointOnCircle(startX, startY);
+    const startX = this.pointsToCircle.x + this.deltaX;
+    const startY = this.pointsToCircle.y + this.deltaY;
+    const end = this.pointsToCircle.closestPointOnCircle(startX, startY);
     return {
             'startX': startX,
             'startY': startY,
@@ -84,12 +99,12 @@ export class EntryArrow {
   }
 
   containsPoint(x: number, y: number) {
-    var lineInfo = this.getEndPoints();
-    var dx = lineInfo.endX - lineInfo.startX;
-    var dy = lineInfo.endY - lineInfo.startY;
-    var length = Math.sqrt(dx * dx + dy * dy);
-    var percent = (dx * (x - lineInfo.startX) + dy * (y - lineInfo.startY)) / (length * length);
-    var distance = (dx * (y - lineInfo.startY) - dy * (x - lineInfo.startX)) / length;
+    const lineInfo = this.getEndPoints();
+    const dx = lineInfo.endX - lineInfo.startX;
+    const dy = lineInfo.endY - lineInfo.startY;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const percent = (dx * (x - lineInfo.startX) + dy * (y - lineInfo.startY)) / (length * length);
+    const distance = (dx * (y - lineInfo.startY) - dy * (x - lineInfo.startX)) / length;
     return (percent > 0 && percent < 1 && Math.abs(distance) < hitTargetPadding); 
   }
 

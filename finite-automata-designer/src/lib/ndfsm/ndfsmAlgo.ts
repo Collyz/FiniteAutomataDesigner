@@ -3,6 +3,7 @@ import { alphabet, ndfsmTransitionSymbols, transitionLabelInputValidator } from 
 import { Arrow, arrows } from "../../../public/scripts/Shapes/Arrow";
 import { SelfArrow } from "../../../public/scripts/Shapes/SelfArrow";
 import { startState } from "../../../public/scripts/Shapes/EntryArrow";
+import type { WalkStep } from "../../../public/scripts/canvasUtil/fsmCanvas";
 import { Queue } from "../data-structures/";
 import { parseInputString } from "../input/InputStringLexer";
 import { showToast } from "../toast";
@@ -77,8 +78,9 @@ export function completenessCheck(){
   return true;
 }
 
-// This function performs BFS to do epsilon closure from a given state
-function epsilonTransitions(pointer: Circle, nextPointers: Set<Circle>){
+// This function performs BFS to do epsilon closure from a given state.
+// Every epsilon arrow followed is added to epsilonArrows, for the walkthrough.
+function epsilonTransitions(pointer: Circle, nextPointers: Set<Circle>, epsilonArrows: Set<Arrow | SelfArrow>){
   const queue: Queue<Circle> = new Queue();
   const visited: Map<Circle, boolean> = new Map();
   queue.offer(pointer);
@@ -100,15 +102,17 @@ function epsilonTransitions(pointer: Circle, nextPointers: Set<Circle>){
         visited.set(arrow.endCircle, true);
         queue.offer(arrow.endCircle);
         nextPointers.add(arrow.endCircle);
+        epsilonArrows.add(arrow);
       }
     }
   }
 
 } 
 
-// This function runs the NDFSM algorithm on the given input string
-export function ndfsmAlgo(input: string){
-
+// This function runs the NDFSM algorithm on the given input string.
+// If step is provided, the run is a walkthrough: the set of active states and
+// the transitions taken out of them are highlighted in turn.
+export async function ndfsmAlgo(input: string, step: WalkStep | null){
   // Check if there is a start state and at least one accept state
   let acceptStateExists: boolean = false;
   for(const circle of circles){
@@ -138,7 +142,8 @@ export function ndfsmAlgo(input: string){
   nextPointers.add(startState.pointsToCircle);
 
   // Run an initial epsilon closure from the start state
-  epsilonTransitions(startState.pointsToCircle, nextPointers);
+  const startEpsilonArrows: Set<Arrow | SelfArrow> = new Set();
+  epsilonTransitions(startState.pointsToCircle, nextPointers, startEpsilonArrows);
 
   // We parse the input string into tokens
   const parseResult = parseInputString(input, alphabet, transitionLabelInputValidator);
@@ -156,6 +161,17 @@ export function ndfsmAlgo(input: string){
     return false;
   }
 
+  // Walkthrough: show the entry arrow and the start state, then any epsilon
+  // arrows followed from it and the full set of active states they lead to
+  if(step){
+    await step([startState]);
+    await step([startState.pointsToCircle]);
+    if(startEpsilonArrows.size > 0){
+      await step([...startEpsilonArrows]);
+      await step([...nextPointers]);
+    }
+  }
+
   // We begin traversing the input string.
   for(const char of tokens){
     // console.log("Processing character: " + char);
@@ -163,6 +179,9 @@ export function ndfsmAlgo(input: string){
     // This is because we don't want to modify the set while iterating over it.
     const currPointers : Set<Circle> = new Set(nextPointers);
     nextPointers.clear();
+
+    // Every transition taken on this character, across all active states
+    const takenArrows: (Arrow | SelfArrow)[] = [];
 
     for(const pointer of currPointers){
       if(pointer !== undefined){
@@ -182,17 +201,35 @@ export function ndfsmAlgo(input: string){
           if(arrow.transition.has(char)){
             // console.log("Taking transition: " + Array.from(arrow.transition).toString() + " to node " + arrow.endCircle.text);
 
-            // We add the endCircle to the nextPointers set, since we will 
+            // We add the endCircle to the nextPointers set, since we will
             // iterate over it in the next round.
             nextPointers.add(arrow.endCircle);
+            takenArrows.push(arrow);
 
-            // We also perform epsilon closure from the new state
-            epsilonTransitions(arrow.endCircle, nextPointers);
-          
           }
         }
         // console.log("Leaving state: " + pointer.text);
-        
+
+      }
+    }
+
+    // We also perform epsilon closure from every state reached on this character.
+    // This happens after all transitions are taken so the walkthrough can show
+    // the states reached directly before the ones reached through epsilon.
+    const reachedStates: Circle[] = [...nextPointers];
+    const epsilonArrows: Set<Arrow | SelfArrow> = new Set();
+    for(const state of reachedStates){
+      epsilonTransitions(state, nextPointers, epsilonArrows);
+    }
+
+    // Walkthrough: show the transitions taken and the states they reach, then
+    // any epsilon arrows followed and the full set of active states they lead to
+    if(step){
+      await step(takenArrows);
+      await step(reachedStates);
+      if(epsilonArrows.size > 0){
+        await step([...epsilonArrows]);
+        await step([...nextPointers]);
       }
     }
   }
