@@ -1,10 +1,10 @@
 "use client";
 
-interface WalkButton{
+interface WalkButtonProps{
     type: "DFSM" | "NDFSM";
 }
 
-export default function RunButton({ type }: WalkButton){
+export default function WalkButton({ type }: WalkButtonProps){
     return (
         <button
             id={`${type.toLowerCase()}WalkBtn`}
