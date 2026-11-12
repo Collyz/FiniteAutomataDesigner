@@ -20,7 +20,7 @@ All run from `finite-automata-designer/`:
 - `npm run build:dfsm` / `npm run build:ndfsm` / `npm run build:canvas` (both) — compile the standalone canvas TypeScript into `public/scripts/{dfsm,ndfsm}/*Canvas.js` via Rollup. Must be re-run any time files under `public/scripts/**` change — the output `.js` files are checked into `public/` and are what actually gets served.
 - `npm run build` — standard Next.js production build (app code only).
 - `npm run build:prod` — full production build: canvas bundles + Next.js build.
-- `npm run lint` — ESLint (`next/core-web-vitals`, `next/typescript`).
+- `npm run lint` — `eslint .` using the flat config in `eslint.config.mjs` (`eslint-config-next/core-web-vitals` + `/typescript`). `public/scripts/**` and the rollup configs are currently ignored.
 
 There is no test suite configured in this repo.
 
@@ -53,10 +53,11 @@ Despite living outside `src/`, canvas scripts import shared logic from `src/lib/
 
 ## Data / auth
 
-- **Supabase** (`src/lib/supabase/{client,server,middleware}.ts`) is the primary DB/auth backend — Postgres storage for saved automata plus user auth. `src/app/middleware.ts` calls `updateSession` from `src/lib/supabase/middleware.ts` on every non-static route to refresh the session.
+- **Supabase** (`src/lib/supabase/{client,server,middleware}.ts`) is the sole DB/auth backend — Postgres storage for saved automata plus user auth (email/password and Google OAuth via `supabase.auth.signInWithOAuth`, see `src/lib/actions.ts`). `src/proxy.ts` (Next 16's renamed middleware) calls `updateSession` from `src/lib/supabase/middleware.ts` on every non-static route to refresh the session and redirect logged-out users away from `/profile` and `/projects`.
 - `src/lib/automata/queries.ts` / `mutations.ts` are the data-access layer for saved automata (fetch/save/update), used by `AutomataEditor.tsx` and the projects pages.
 - The DB stores the legacy type names `"DFA"` / `"NFA"`; the UI/editor uses `"DFSM"` / `"NDFSM"`. The mapping happens at the save boundary in `AutomataEditor.tsx` (`handleSaveAsNew`) — don't conflate the two naming schemes.
-- Google OAuth (`next-auth`, `google-auth-library`, `google-one-tap`) and AWS DynamoDB SDK (`@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb`) are also dependencies; check `.env.local` for the full set of required env vars (Supabase URL/key, Google client id/secret, NextAuth secret/url, AWS credentials/region) before assuming which backend a given code path uses.
+- Required env vars are documented in `.env.template` (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; `SUPABASE_SECRET_KEY` and `DATABASE_URL` are for local tooling only). For local development, run `npx supabase start` (needs Docker) and copy the values from `npx supabase status`.
+- The project previously used NextAuth + AWS DynamoDB; both were fully replaced by Supabase and their dependencies removed. Ignore any leftover references in `.rollup.cache/` (stale build cache).
 
 ## Path alias
 

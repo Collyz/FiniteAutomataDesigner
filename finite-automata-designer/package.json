@@ -12,42 +12,38 @@
     "build:canvas": "rollup -c rollup.dfsm.config.js --forceExit && rollup -c rollup.ndfsm.config.js --forceExit",
     "build:dfsm": "rollup -c rollup.dfsm.config.js --forceExit",
     "build:ndfsm": "rollup -c rollup.ndfsm.config.js --forceExit",
-    "build:prod": "npm run build:canvas && npm run build:dfsm && npm run build",
+    "build:prod": "npm run build:canvas && npm run build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.840.0",
-    "@aws-sdk/lib-dynamodb": "^3.840.0",
-    "@headlessui/react": "^2.2.7",
-    "@heroicons/react": "^2.2.0",
-    "@supabase/ssr": "^0.6.1",
+    "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.55.0",
     "client-only": "^0.0.1",
-    "google-auth-library": "^10.2.1",
-    "google-one-tap": "^1.0.6",
-    "next": "^15.5.9",
-    "next-auth": "^4.24.11",
+    "next": "^16.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
     "@tailwindcss/postcss": "^4",
-    "@types/google-one-tap": "^1.2.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^9.2.0",
     "eslint": "^9",
-    "eslint-config-next": "15.3.3",
+    "eslint-config-next": "^16.4.6",
     "rollup": "^4.55.1",
     "supabase": "^2.117.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    }
   }
 }
