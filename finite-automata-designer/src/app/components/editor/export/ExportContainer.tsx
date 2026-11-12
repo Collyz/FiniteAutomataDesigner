@@ -1,26 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { toggle_visiblity } from "../../../../../public/scripts/canvasUtil/canvasUtil";
+import { useState } from "react";
+import { useDropdownFloating } from "../useDropdownFloating";
 
 export default function ExportContainer(){
 
     const [exportOpen, setExportOpen] = useState(false);
-    
-    const exportMenuRef = useRef<HTMLDivElement>(null);
-    
+    const { refs, floatingStyles } = useDropdownFloating(exportOpen);
+
     return (
         <div className="flex gap-2">
-            <p className="text-lg mt-5">Export as: </p> 
+            <p className="text-lg mt-5">Export as: </p>
             <div className="relative inline-block text-left mt-5">
                 {/* Exporting options parent selector*/}
                 <button
+                    ref={refs.setReference}
                     id="exportMenuBtn"
                     type="button"
-                    onClick={() => {
-                        if (exportMenuRef.current) toggle_visiblity(exportMenuRef.current);
-                        setExportOpen(prev => !prev);
-                    }}
+                    onClick={() => setExportOpen(prev => !prev)}
                     className="flex justify-center gap-x-1.5 rounded-md bg-gray-700 text-white px-2 py-1 text-md hover:bg-black transition"
                 >
                     Export Options
@@ -38,21 +35,21 @@ export default function ExportContainer(){
                         />
                     </svg>
                 </button>
-                
-                {/* Export Menu options (SVG and LaTeX)*/}
+
+                {/* Export Menu options (SVG and LaTeX).
+                    Kept mounted (toggled via `hidden`) because the canvas script
+                    binds to the button IDs once on load. */}
                 <div
-                    ref={exportMenuRef}
+                    ref={refs.setFloating}
+                    style={floatingStyles}
                     id="exportMenu"
-                    hidden
-                    className="absolute mt-2 w-40 rounded-md bg-gray-700 shadow-lg z-20"
+                    hidden={!exportOpen}
+                    className="w-40 rounded-md bg-gray-700 shadow-lg z-20"
                 >
                     <button
                         id="svgExportBtn"
                         type="button"
-                        onClick={() => {
-                            if (exportMenuRef.current) toggle_visiblity(exportMenuRef.current);
-                            setExportOpen(false);
-                        }}
+                        onClick={() => setExportOpen(false)}
                         className="block w-full px-4 py-2 text-left text-white hover:bg-gray-600"
                     >
                         SVG
@@ -60,10 +57,7 @@ export default function ExportContainer(){
                     <button
                         id="latexExportBtn"
                         type="button"
-                        onClick={() => {
-                            if (exportMenuRef.current) toggle_visiblity(exportMenuRef.current);
-                            setExportOpen(false);
-                        }}
+                        onClick={() => setExportOpen(false)}
                         className="block w-full px-4 py-2 text-left text-white hover:bg-gray-600"
                     >
                         LaTeX

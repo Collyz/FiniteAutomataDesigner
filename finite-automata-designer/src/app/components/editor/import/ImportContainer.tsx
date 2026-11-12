@@ -1,28 +1,25 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { toggle_visiblity } from "../../../../../public/scripts/canvasUtil/canvasUtil";
+import { useState } from "react";
+import { useDropdownFloating } from "../useDropdownFloating";
 
 
 export default function ImportContainer(){
 
     const [importOpen, setImportOpen] = useState(false);
-    
-    const importMenuRef = useRef<HTMLDivElement>(null);
+    const { refs, floatingStyles } = useDropdownFloating(importOpen);
 
     return (
         <div className="flex gap-2 mt-2">
-            <p className="text-lg">Import as: </p> 
+            <p className="text-lg">Import as: </p>
             <div className="flex gap-2">
                 {/* Importing options parent selector*/}
                 <div className="relative inline-block text-left">
                     <button
+                        ref={refs.setReference}
                         id="importMenuBtn"
                         type="button"
-                        onClick={() => {
-                            if (importMenuRef.current) toggle_visiblity(importMenuRef.current);
-                            setImportOpen(prev => !prev);
-                        }}
+                        onClick={() => setImportOpen(prev => !prev)}
                         className="flex justify-center gap-x-1.5 rounded-md bg-gray-700 text-white px-2 py-1 text-md hover:bg-black transition"
                     >
                         Import Options
@@ -40,20 +37,20 @@ export default function ImportContainer(){
                             />
                         </svg>
                     </button>
-                    {/* Import Menu options (SVG and LaTeX)*/}
+                    {/* Import Menu options (SVG and LaTeX).
+                        Kept mounted (toggled via `hidden`) because the canvas script
+                        binds to the button IDs once on load. */}
                     <div
-                        ref={importMenuRef}
+                        ref={refs.setFloating}
+                        style={floatingStyles}
                         id="importMenu"
-                        hidden
-                        className="absolute mt-2 w-40 rounded-md bg-gray-700 shadow-lg z-20"
+                        hidden={!importOpen}
+                        className="w-40 rounded-md bg-gray-700 shadow-lg z-20"
                     >
                         <button
                             id="svgImportBtn"
                             type="button"
-                            onClick={() => {
-                                if (importMenuRef.current) toggle_visiblity(importMenuRef.current);
-                                setImportOpen(false);
-                            }}
+                            onClick={() => setImportOpen(false)}
                             className="block w-full px-4 py-2 text-left text-white hover:bg-gray-600"
                         >
                             Import as SVG
@@ -61,19 +58,16 @@ export default function ImportContainer(){
                         <button
                             id="latexImportBtn"
                             type="button"
-                            onClick={() => {
-                                if (importMenuRef.current) toggle_visiblity(importMenuRef.current);
-                                setImportOpen(false);
-                            }}
+                            onClick={() => setImportOpen(false)}
                             className="block w-full px-4 py-2 text-left text-white hover:bg-gray-600"
                         >
                             Import as LaTeX
                         </button>
                     </div>
                 </div>
-                <button 
+                <button
                     id="confirmImport"
-                    className="flex justify-center gap-x-1.5 rounded-md bg-gray-700 text-white px-2 py-1 text-md hover:bg-black transition" 
+                    className="flex justify-center gap-x-1.5 rounded-md bg-gray-700 text-white px-2 py-1 text-md hover:bg-black transition"
                     hidden
                 >
                     Draw Import
