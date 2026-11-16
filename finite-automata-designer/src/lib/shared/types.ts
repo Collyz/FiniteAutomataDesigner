@@ -1,3 +1,5 @@
+import type { DbAutomatonType } from "@/lib/automata/automatonTypes";
+
 export type SerializedCircle = {
     id: string;
     x: number;
@@ -34,6 +36,7 @@ export type SerializedFA = {
     circles: SerializedCircle[];
     arrows: SerializedArrow[];
     entryArrow: SerializedEntryArrow;
+    entryArrows?: SerializedEntryArrow[];
 }
 
 export interface CreateAutomaton {
@@ -42,7 +45,8 @@ export interface CreateAutomaton {
     description?: string | null;
     // Stored values in the database keep the legacy DFA/NFA names so existing
     // rows stay valid; the UI maps them to DFSM/NDFSM at the display boundary.
-    type: "DFA" | "NFA";
+    // Drawings from the draw-only page are stored as "DRAW".
+    type: DbAutomatonType;
     automaton: SerializedFA;
 }
 

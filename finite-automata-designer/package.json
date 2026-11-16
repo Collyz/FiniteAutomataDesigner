@@ -8,10 +8,12 @@
     "dev:all": "npm run build:canvas && npm run dev",
     "dev:dfsm": "npm run build:dfsm && npm run dev",
     "dev:ndfsm": "npm run build:ndfsm && npm run dev",
+    "dev:draw": "npm run build:draw && npm run dev",
     "build": "next build",
-    "build:canvas": "rollup -c rollup.dfsm.config.js --forceExit && rollup -c rollup.ndfsm.config.js --forceExit",
+    "build:canvas": "rollup -c rollup.dfsm.config.js --forceExit && rollup -c rollup.ndfsm.config.js --forceExit && rollup -c rollup.draw.config.js --forceExit",
     "build:dfsm": "rollup -c rollup.dfsm.config.js --forceExit",
     "build:ndfsm": "rollup -c rollup.ndfsm.config.js --forceExit",
+    "build:draw": "rollup -c rollup.draw.config.js --forceExit",
     "build:prod": "npm run build:canvas && npm run build:dfsm && npm run build",
     "start": "next start",
     "lint": "next lint"

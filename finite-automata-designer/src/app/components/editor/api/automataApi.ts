@@ -35,4 +35,14 @@ export const automataApi = {
             }
         },
     },
+    DRAW: {
+        loadFAIntoCanvas: (data: SerializedFA) => window.loadDRAWIntoCanvas(data),
+        exportFA: () => window.exportDRAW(),
+        resetEditor: () => {
+            if (typeof window.resetDRAWEditor === "function") {
+                window.resetDRAWEditor();
+            }
+        },
+        getAlphabet: () => [] as string[], // The draw-only page has no alphabet
+    },
 } as const;

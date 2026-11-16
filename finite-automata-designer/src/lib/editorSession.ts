@@ -1,6 +1,7 @@
 import { EditorSession } from "@/types/editorSession";
+import { EditorType } from "@/lib/automata/automatonTypes";
 
-export function getEditorSession(type: "DFSM" | "NDFSM") {
+export function getEditorSession(type: EditorType) {
     const key = `${type.toLowerCase()}-session`;
 
     const stored = sessionStorage.getItem(key);
@@ -14,7 +15,7 @@ export function getEditorSession(type: "DFSM" | "NDFSM") {
 
 
 export function setEditorSession(
-    type: "DFSM" | "NDFSM",
+    type: EditorType,
     session: EditorSession
 ) {
     const key = `${type.toLowerCase()}-session`;
@@ -27,16 +28,15 @@ export function setEditorSession(
 
 
 export function clearEditorSession(
-    type: "DFSM" | "NDFSM"
+    type: EditorType
 ) {
     const key = `${type.toLowerCase()}-session`;
 
     sessionStorage.removeItem(key);
 }
 
-// Clears both DFSM and NDFSM session entries. Call this on sign-out so the
-// next person to use this tab doesn't get dropped into the previous user's
-// last-opened project.
+// Clears the DFSM, NDFSM, and draw-only session entries. Call this on sign-out so the next person 
+// to use this tab doesn't get dropped into the previous user's last-opened project.
 export function clearAllEditorSessions() {
-    (["DFSM", "NDFSM"] as const).forEach(clearEditorSession);
+    (["DFSM", "NDFSM", "DRAW"] as const).forEach(clearEditorSession);
 }

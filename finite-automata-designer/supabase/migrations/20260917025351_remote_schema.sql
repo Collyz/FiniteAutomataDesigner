@@ -10,7 +10,7 @@ CREATE TABLE "public"."finite_automata" (
   "updated_at"  timestamp with time zone DEFAULT now(),
   "description" text,
   CONSTRAINT "finite_automata_pkey" PRIMARY KEY (id),
-  CONSTRAINT "finite_automata_type_check" CHECK ((type = ANY (ARRAY['DFA'::text, 'NFA'::text])))
+  CONSTRAINT "finite_automata_type_check" CHECK ((type = ANY (ARRAY['DFA'::text, 'NFA'::text, 'DRAW'::text])))
 );
 
 ALTER TABLE "public"."finite_automata"

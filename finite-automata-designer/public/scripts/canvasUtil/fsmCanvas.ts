@@ -10,17 +10,17 @@
  Licensed under the MIT Licenses
 */
 
-// Shared controller for the DFSM and NDFSM designer canvases.
-// Everything common to both canvases lives here; the per-automaton entry
-// points (dfsm/dfsmCanvas.ts and ndfsm/ndfsmCanvas.ts) supply the differences
-// through an FsmCanvasConfig.
+// Shared controller for the DFSM, NDFSM, and draw-only designer canvases.
+// Everything common to the canvases lives here; the per-page entry points
+// (dfsm/dfsmCanvas.ts, ndfsm/ndfsmCanvas.ts, and draw/drawCanvas.ts) supply
+// the differences through an FsmCanvasConfig.
 
-import { Circle, circles} from "../Shapes/Circle";
-import { Arrow, arrows} from "../Shapes/Arrow";
-import { SelfArrow} from "../Shapes/SelfArrow";
-import { EntryArrow, startState, setStartState} from "../Shapes/EntryArrow";
-import { TemporaryArrow} from "../Shapes/TemporaryArrow";
-import { snapToPadding} from "../Shapes/draw";
+import { Circle, circles } from "../Shapes/Circle";
+import { Arrow, arrows } from "../Shapes/Arrow";
+import { SelfArrow } from "../Shapes/SelfArrow";
+import { EntryArrow, startState, setStartState, entryArrows, allEntryArrows } from "../Shapes/EntryArrow";
+import { TemporaryArrow } from "../Shapes/TemporaryArrow";
+import { snapToPadding } from "../Shapes/draw";
 import { saveAsSVG, saveAsLaTeX, toggle_visiblity, buildSVG } from "./canvasUtil";
 import type { TransitionLabelInputValidator } from "@/lib/validation/TransitionLabelInputValidator";
 import { showToast, ShowToastDetail } from "@/lib/toast";
@@ -37,17 +37,21 @@ export type CanvasObject = Circle | EntryArrow | Arrow | SelfArrow;
 export type WalkStep = (objs: CanvasObject[]) => Promise<void>;
 
 export interface FsmCanvasConfig {
-  // "DFSM" or "NDFSM" — used in export headers and user-facing messages
-  automatonLabel: "DFSM" | "NDFSM";
+  // "DFSM", "NDFSM", or "FSM" (draw-only page) — used in export headers and
+  // user-facing messages
+  automatonLabel: "DFSM" | "NDFSM" | "FSM";
   // id of the <canvas> element for this automaton's page
   canvasId: string;
-  // id of the Run button for this automaton's page
-  runBtnId: string;
-  // id of the Walk Through visualizer button for this automaton's page
-  walkBtnId: string;
+  // id of the Run button for this automaton's page. Omitted on pages that
+  // don't simulate the automaton (the draw-only page).
+  runBtnId?: string;
+  // id of the Walk Through visualizer button for this automaton's page.
+  // Omitted on pages that don't simulate the automaton (the draw-only page).
+  walkBtnId?: string;
   // Runs the automaton against an input string. When step is non-null the run
   // is a walkthrough and the algorithm awaits step() at each state/transition.
-  runAlgo: (input: string, step: WalkStep | null) => Promise<boolean>;
+  // Omitted on pages that don't simulate the automaton (the draw-only page).
+  runAlgo?: (input: string, step: WalkStep | null) => Promise<boolean>;
   // Validates/commits a finished transition label. Returns false when rejected.
   commitTransition: (arrow: Arrow | SelfArrow | null) => boolean;
   // The alphabet and validator are reassignable module bindings, so they must
@@ -67,6 +71,11 @@ export interface FsmCanvasConfig {
   onCanvasReady?: (draw: () => void) => void;
   // Controls interaction with the canvas
   disabled: boolean;
+  // Controls the transition label cleanup into a sorted comma-sep symbol list. (default: true )
+  // The draw-only page turns this off so labels are kept exactly as the user typed them.
+  normalizeTransitionLabels?: boolean;
+  // Controls whether multiple entry arrows can be drawn on the canvas. (default: false)
+  multipleEntryArrows?: boolean;
 }
 
 // Empties the automaton and wipes the canvas.
@@ -80,6 +89,7 @@ export function clearAutomaton(
     if (ctx) {
       arrows.length = 0;
       circles.length = 0;
+      entryArrows.length = 0;
       setStartState(null);
       if (draw) {
         draw();
@@ -160,14 +170,12 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         arrows[arrow].draw(ctx);
       }
 
-      // If there is an EntryArrow, then draw it
-      if(startState){
+      // Draw every EntryArrow (the start state on DFSM/NDFSM, all of them on the draw-only page)
+      for (const entryArrow of allEntryArrows()) {
         ctx.lineWidth = 1;
-        ctx.fillStyle = ctx.strokeStyle = isHighlighted(startState) ? hightlightSelected : base;
-        if (startState instanceof EntryArrow) {
-          startState.highlighted = isHighlighted(startState);
-        }
-        startState.draw(ctx);
+        ctx.fillStyle = ctx.strokeStyle = isHighlighted(entryArrow) ? hightlightSelected : base;
+        entryArrow.highlighted = isHighlighted(entryArrow);
+        entryArrow.draw(ctx);
       }
 
       // If there is a TemporaryArrow being created, then draw it
@@ -314,9 +322,13 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
             }
           }
           else if (tempArrow instanceof EntryArrow) {
-            // If the EntryArrow doesn't already exist, then
-            // create one and set it as the new start state
-            if (startState === null) {
+            if (config.multipleEntryArrows) {
+              // Draw-only page: no limit on entry arrows, overall or per state
+              selectedObj = tempArrow;
+              entryArrows.push(tempArrow);
+            }
+            // Otherwise, only create one if there's no start state yet, and set it as the start state
+            else if (startState === null) {
               selectedObj = tempArrow;
               setStartState(tempArrow);
             }
@@ -412,6 +424,13 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
           // EntryArrow points to is the selected object, then delete the EntryArrow
           if(startState == selectedObj || startState?.pointsToCircle == selectedObj){
             setStartState(null);
+          }
+
+          // Draw-only page: delete the selected EntryArrow, and every EntryArrow pointing at the state being deleted.
+          for (let i = entryArrows.length - 1; i >= 0; i--) {
+            if (entryArrows[i] == selectedObj || entryArrows[i].pointsToCircle == selectedObj) {
+              entryArrows.splice(i, 1);
+            }
           }
 
           // Iterate through all arrows that are present
@@ -518,10 +537,12 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         }
       }
 
-      // Check if the startState is being selected by the mouse.
-      // If it is, then return it.
-      if(startState && startState.containsPoint(x,y)){
-        return startState;
+      // Check if any EntryArrow is being selected by the mouse. 
+      // If one of them is selected, return that specific EntryArrow.
+      for (const entryArrow of allEntryArrows()) {
+        if(entryArrow.containsPoint(x,y)){
+          return entryArrow;
+        }
       }
 
       return null;
@@ -593,6 +614,10 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
     // then we will run the transition commit check
     if (nextSelected !== lastEditedArrow) {
       if (config.commitTransition(lastEditedArrow)) {
+        if (config.normalizeTransitionLabels === false) {
+          config.getValidator().resetBuffer();
+          return;
+        }
         // This will sort the string in ascending order and assign it to the arrow's text,
         // which makes it more visually appealing for the user
         lastEditedArrow.text = lastEditedArrow.text
@@ -658,9 +683,9 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       // Button that will clear the canvas
       const clearCanvasBtn = document.getElementById('clearCanvas') as HTMLButtonElement | null;
       // Run button
-      const runBtn = document.getElementById(config.runBtnId) as HTMLButtonElement | null;
+      const runBtn = config.runBtnId ? document.getElementById(config.runBtnId) as HTMLButtonElement | null : null;
       // Walkthrough Visualizer button
-      const walkBtn = document.getElementById(config.walkBtnId) as HTMLButtonElement | null;
+      const walkBtn = config.walkBtnId ? document.getElementById(config.walkBtnId) as HTMLButtonElement | null : null;
       // Slider and label for the delay between walkthrough steps
       const walkDelaySlider = document.getElementById('walkDelay') as HTMLInputElement | null;
       const walkDelayLabel = document.getElementById('walkDelayLabel') as HTMLLabelElement | null;
@@ -696,14 +721,17 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
         }, { signal });
       };
 
-      if (inputString) {
+      // Local constant container for config.runAlgo, used in guards
+      const runAlgo = config.runAlgo;
+
+      if (inputString && runAlgo) {
         inputString.addEventListener("keydown", (event) => {
           // If the "Enter" key is pressed on the input string
           if (event.key === "Enter") {
             event.preventDefault();
             if (disabled) return; // Prevent new input strings during a walkthrough
 
-            config.runAlgo(inputString.value, null);
+            runAlgo(inputString.value, null);
 
             // Reset the input tag
             inputString.value = "";
@@ -859,11 +887,11 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       }
 
       // Run button
-      if (runBtn) {
+      if (runBtn && runAlgo) {
         runBtn.addEventListener("click", () => {
           // Run the automaton check for the user created automaton
           if (inputString && !disabled) {
-            config.runAlgo(inputString.value, null);
+            runAlgo(inputString.value, null);
             // Reset the input tag
             inputString.value = "";
           }
@@ -871,7 +899,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
       }
 
       // Walkthrough Visualizer Button
-      if (walkBtn) {
+      if (walkBtn && runAlgo) {
         walkBtn.addEventListener("click", async () => {
           // Run the automaton check with a visualization for the user created automation
           if (!inputString || !drawRef || disabled) return;
@@ -891,7 +919,7 @@ export function initFsmCanvas(config: FsmCanvasConfig) {
           };
 
           try {
-            await config.runAlgo(input, step);
+            await runAlgo(input, step);
           } finally {
             walkHighlights = new Set();
             disabled = false;
