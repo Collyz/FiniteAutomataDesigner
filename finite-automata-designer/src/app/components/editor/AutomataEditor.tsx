@@ -36,6 +36,7 @@ import { getAutomaton } from '@/lib/automata/queries';
 import { saveAutomaton, updateAutomaton } from "@/lib/automata/mutations";
 
 import { automataApi } from './api/automataApi';
+import { DB_TO_EDITOR_TYPE, EDITOR_TO_DB_TYPE, EDITOR_TYPE_LABEL, EditorType, editorRoute } from '@/lib/automata/automatonTypes';
 import { getEditorSession, setEditorSession } from '@/lib/editorSession';
 import Loading from '../misc/Loading';
 import ErrorMessage from '../misc/ErrorMessage';
@@ -45,8 +46,15 @@ import ToastHost from '../misc/ToastHost';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface AutomataEditorProps {
-    type: "DFSM" | "NDFSM";
+    // "DRAW" is the draw-only page: no alphabet, input string, or running
+    type: EditorType;
 }
+
+const TITLES: Record<EditorType, string> = {
+    DFSM: "Deterministic Finite State Machine",
+    NDFSM: "Non-Deterministic Finite State Machine",
+    DRAW: "Draw a Finite State Machine",
+};
 
 export default function AutomataEditor({ type }: AutomataEditorProps){
 
@@ -66,7 +74,8 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
     const projectNotFound = !!automatonId && notFoundId === automatonId;
     const isNewProject = (searchParams?.get("new") === "true") as boolean;
 
-    const title: string = type === "DFSM" ? "Deterministic Finite State Machine" : "Non-Deterministic Finite State Machine";
+    const title: string = TITLES[type];
+    const isDrawOnly = type === "DRAW";
 
     const api = automataApi[type];
 
@@ -192,6 +201,13 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                     return;
                 }
 
+                // Send it to the editor that matches its saved type.
+                const projectType = DB_TO_EDITOR_TYPE[finiteAutomatonData.type];
+                if(projectType && projectType !== type){
+                    router.replace(`${editorRoute(projectType)}?id=${automatonId}`);
+                    return;
+                }
+
                 setName(finiteAutomatonData.name);
                 setDescription(finiteAutomatonData.description);
 
@@ -218,7 +234,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
         }
 
         loadAutomaton();
-    },[automatonId, api, type, handleLoadFailure]);
+    },[automatonId, api, type, handleLoadFailure, router]);
 
     useEffect(() => {
         if (!isNewProject) return;
@@ -238,7 +254,8 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
         try{
             // The database stores the legacy DFA/NFA type names; map the UI name here
-            const dbType = type === "DFSM" ? "DFA" as const : "NFA" as const;
+            console.debug("Saving new project as type:", EDITOR_TO_DB_TYPE[type]);
+            const dbType = EDITOR_TO_DB_TYPE[type];
             const finiteAutomataData = await saveAutomaton(serialized, newName, newDescription, dbType);
             showToast("Automaton saved!");
             // Ex: /dfsm?id=123 or /ndfsm?id=456, where "type" is either "DFSM" or "NDFSM"
@@ -300,8 +317,12 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
                 {/* FA title at the top */}
                 <AutomataHeader
-                    title={!name ? title : (type.toUpperCase() + ": " + name)}
-                    description={description}
+                    title={!name ? title : (EDITOR_TYPE_LABEL[type] + ": " + name)}
+                    description={
+                        (isDrawOnly && !name)
+                            ? "Draw freely: transitions aren't limited to an alphabet or checked for determinism."
+                            : description
+                    }
                 />
 
                 <div
@@ -314,7 +335,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
 
                         {/* Instructions dropdown */}
                         <Instructions 
-                            type={type.toUpperCase() as "DFSM" | "NDFSM"}
+                            type={type}
                         />
 
                     </div>
@@ -338,6 +359,8 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                                 <NewProjectButton handleNewProject={handleNewProject} /> 
                                 { /* Print button parent container */}
                                 <PrintButton />
+                                {/* The draw-only page has no right hand panel, so Clear Canvas lives here */}
+                                {isDrawOnly && <ClearCanvasButton />}
                             </div>
                             {/* Exporting dropdowns container */}
                             <ExportContainer />
@@ -354,8 +377,9 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                         </div>
                     </div>
                         
-                    {/* Right hand parent div*/}
+                    {/* Right hand parent div. The draw-only page has no input string, alphabet, or run controls...- spacer there to keep the canvas centered. */}
                     <div className="flex-1">
+                        {!isDrawOnly && (
                         <div className="flex flex-col gap-3 h-13 justify-start-safe pl-5">
                             <div className="flex flex-col gap-5">
                                 <div id='inputDiv' className="flex flex-col self-center w-full max-w-md text-black">
@@ -369,10 +393,10 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                                     {/* Canvas Related Buttons Parent Container */}
                                     <div className="flex self-center gap-3 pt-3">
                                         {/* Run button to run the FA with the given input string */}
-                                        <RunButton type={type.toUpperCase() as "DFSM" | "NDFSM"}/>
+                                        <RunButton type={type}/>
                                         {/* Clear Canvas parent container */}
                                         <ClearCanvasButton />
-                                        <WalkButton type={type.toUpperCase() as "DFSM" | "NDFSM"} />
+                                        <WalkButton type={type} />
                                     </div>
                                     {/* Slider for the delay between walkthrough steps */}
                                     <div className="pt-3">
@@ -381,6 +405,7 @@ export default function AutomataEditor({ type }: AutomataEditorProps){
                                 </div>
                             </div>
                         </div>
+                        )}
                     </div>
                 </div>
 

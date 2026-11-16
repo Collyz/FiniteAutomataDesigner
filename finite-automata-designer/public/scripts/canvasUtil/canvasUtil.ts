@@ -3,7 +3,7 @@ import { ExportAsLaTeX } from "../exporting/ExportAsLaTeX";
 import { Circle, circles} from "../Shapes/Circle";
 import { Arrow, arrows} from "../Shapes/Arrow";
 import { SelfArrow} from "../Shapes/SelfArrow";
-import { EntryArrow, startState } from "../Shapes/EntryArrow";
+import { EntryArrow, allEntryArrows } from "../Shapes/EntryArrow";
 
 export function buildSVG(
   canvas: HTMLCanvasElement,
@@ -33,9 +33,9 @@ export function buildSVG(
     exporter.faObject = arrows[arrow];
     arrows[arrow].draw(exporter);
   }
-  if (startState) {
-    exporter.faObject = startState;
-    startState.draw(exporter);
+  for (const entryArrow of allEntryArrows()) {
+    exporter.faObject = entryArrow;
+    entryArrow.draw(exporter);
   }
 
   return exporter.toSVG();
@@ -76,9 +76,9 @@ export function saveAsLaTeX(
     exporter.faObject = arrows[arrow];
     arrows[arrow].draw(exporter);
   }
-  if (startState) {
-    exporter.faObject = startState;
-    startState.draw(exporter);
+  for (const entryArrow of allEntryArrows()) {
+    exporter.faObject = entryArrow;
+    entryArrow.draw(exporter);
   }
 
   output(exporter.toLaTeX(), textArea);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface InstructionsProps{
-    type: "DFSM" | "NDFSM";
+    type: "DFSM" | "NDFSM" | "DRAW";
 }
 
 export default function Instructions({ type }: InstructionsProps){
@@ -43,8 +43,12 @@ export default function Instructions({ type }: InstructionsProps){
                     <li><p className="font-semibold inline">Make accept state: </p>Double-click an existing state</li>
                     <li><p className="font-semibold inline">Type onto arrow or state: </p>Click on desired state, then begin typing. Click again anywhere else to submit</li>
                     <li><p className="font-semibold inline">Type numeric subscript: </p>Put an underscore before the number (ex: &quot;q_0&quot;)</li>
-                    <li><p className="font-semibold inline">Set alphabet: </p>Type a comma-separated list of all the characters you wish to define for your DFSM. Press Enter to submit</li>
-                    <li><p className="font-semibold inline">Run {type}: </p>Type an input string containing only the characters from your alphabet. Press Enter to submit</li>
+                    {type !== "DRAW" && (
+                        <>
+                            <li><p className="font-semibold inline">Set alphabet: </p>Type a comma-separated list of all the characters you wish to define for your DFSM. Press Enter to submit</li>
+                            <li><p className="font-semibold inline">Run {type}: </p>Type an input string containing only the characters from your alphabet. Press Enter to submit</li>
+                        </>
+                    )}
                 </ul>
             )}
         </div>

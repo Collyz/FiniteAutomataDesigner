@@ -1,6 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { DB_TO_EDITOR_TYPE, DbAutomatonType, EDITOR_TYPE_LABEL, EditorType, editorRoute } from "@/lib/automata/automatonTypes";
+
+// Badge colors per editor type
+const BADGE_CLASSES: Record<EditorType, string> = {
+    DFSM: "bg-blue-100 text-blue-700",
+    NDFSM: "bg-purple-100 text-purple-700",
+    DRAW: "bg-green-100 text-green-700",
+};
 
 interface ProjectCardProps {
     id: string;
@@ -19,11 +27,10 @@ export default function ProjectCard({
     onEdit,
     onDelete,
 }: ProjectCardProps) {
-    // The database stores the legacy "DFA"/"NFA" type names; map them to the
-    // renamed routes and display names here so existing rows keep working.
-    const isDfsm = type === "DFA";
-    const route = isDfsm ? "dfsm" : "ndfsm";
-    const displayType = isDfsm ? "DFSM" : "NDFSM";
+    // The database stores the legacy "DFA"/"NFA" type names (and "DRAW" for drawings). Map them to the renamed routes and display names here so existing rows keep working.
+    const editorType: EditorType = DB_TO_EDITOR_TYPE[type as DbAutomatonType] ?? "NDFSM";
+    const route = editorRoute(editorType);
+    const displayType = EDITOR_TYPE_LABEL[editorType];
 
     return (
         <div
@@ -44,7 +51,7 @@ export default function ProjectCard({
             "
         >
             <Link
-                href={`/${route}?id=${id}`}
+                href={`${route}?id=${id}`}
                 className="flex flex-col gap-4"
             >
                 <div className="flex items-start justify-between">
@@ -55,11 +62,7 @@ export default function ProjectCard({
                     <span
                         className={`
                             px-3 py-1 rounded-full text-sm font-semibold
-                            ${
-                                isDfsm
-                                    ? "bg-blue-100 text-blue-700"
-                                    : "bg-purple-100 text-purple-700"
-                            }
+                            ${BADGE_CLASSES[editorType]}
                         `}
                     >
                         {displayType}

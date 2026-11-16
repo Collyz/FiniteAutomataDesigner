@@ -2,13 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { getEditorSession, setEditorSession } from "@/lib/editorSession";
+import { EditorType } from "@/lib/automata/automatonTypes";
 
 interface EditorButtonProps{
-    type: "DFSM" | "NDFSM";
+    type: EditorType;
+    label?: string; // button text, defaults to the type
 }
 
 export default function EditorButton({
     type,
+    label,
 }: EditorButtonProps) {
     const router = useRouter();
 
@@ -43,7 +46,7 @@ export default function EditorButton({
             onClick={handleClick}
             className="px-10 py-5 bg-gray-600 text-2xl text-white rounded hover:bg-black hover:shadow-lg hover:scale-105 transition-transform duration-400"
         >
-            {type}
+            {label ?? type}
         </button>
     );
 }

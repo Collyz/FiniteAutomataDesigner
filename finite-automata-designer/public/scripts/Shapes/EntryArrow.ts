@@ -22,11 +22,18 @@ import { ExportAsSVG } from "../exporting/ExportAsSVG";
 // attribute for Circles, it was best that the startState
 // was set to the EntryArrow instead of its Circle
 export let startState: EntryArrow|null = null;
+// Entry arrows on the draw-only page, which has no limit on how many entry arrows can be drawn
+export const entryArrows: EntryArrow[] = [];
 
 // Since the startState will be imported, it cannot be reassigned
 // as usual, so this setter method will enable you to do so
 export function setStartState(newEntryArrow: EntryArrow | null){
   startState = newEntryArrow;
+}
+
+// startState on the DFSM/NDFSM pages, entryArrows on the draw-only page
+export function allEntryArrows(): EntryArrow[] {
+  return startState ? [startState, ...entryArrows] : [...entryArrows];
 }
 
 export class EntryArrow {

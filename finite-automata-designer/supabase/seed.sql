@@ -258,4 +258,103 @@ BEGIN
   )
   ON CONFLICT (id) DO NOTHING;
 
+  -- Drawing from the draw-only page (/draw). Transition labels are free-form,
+  -- and every entry arrow goes in "entryArrows" (this one has none).
+  INSERT INTO public.finite_automata (id, user_id, name, type, description, automaton)
+  VALUES (
+    '00000000-0000-0000-0000-000000000103',
+    demo_user_id,
+    'Sample Drawing',
+    'DRAW',
+    'Six states joined by curved arrows, drawn on the draw-only page.',
+    '{
+        "arrows": [
+            {
+            "id": "a0",
+            "to": "c51",
+            "from": "c50",
+            "transition": [],
+            "parallelPart": 0.6221859706362153,
+            "lineAngleAdjust": 0,
+            "perpendicularPart": 85.94389459376701
+            },
+            {
+            "id": "a1",
+            "to": "c50",
+            "from": "c51",
+            "transition": [],
+            "parallelPart": 0.5778907974282698,
+            "lineAngleAdjust": 0,
+            "perpendicularPart": -98.75793739562084
+            },
+            {
+            "id": "a2",
+            "to": "c53",
+            "from": "c52",
+            "transition": [],
+            "parallelPart": 0.6084833494823806,
+            "lineAngleAdjust": 0,
+            "perpendicularPart": -221.7490940613235
+            },
+            {
+            "id": "a3",
+            "to": "c52",
+            "from": "c53",
+            "transition": [],
+            "parallelPart": 0.49095034882349764,
+            "lineAngleAdjust": 0,
+            "perpendicularPart": -298.6980976094162
+            }
+        ],
+        "circles": [
+            {
+            "x": 335,
+            "y": 167,
+            "id": "c48",
+            "text": "",
+            "isAccept": true
+            },
+            {
+            "x": 443,
+            "y": 167,
+            "id": "c49",
+            "text": "",
+            "isAccept": true
+            },
+            {
+            "x": 298,
+            "y": 333,
+            "id": "c50",
+            "text": "",
+            "isAccept": false
+            },
+            {
+            "x": 499,
+            "y": 333,
+            "id": "c51",
+            "text": "",
+            "isAccept": false
+            },
+            {
+            "x": 119,
+            "y": 278,
+            "id": "c52",
+            "text": "",
+            "isAccept": false
+            },
+            {
+            "x": 679,
+            "y": 265,
+            "id": "c53",
+            "text": "",
+            "isAccept": false
+            }
+        ],
+        "alphabet": [],
+        "entryArrow": {},
+        "entryArrows": []
+    }'::jsonb
+  )
+  ON CONFLICT (id) DO NOTHING;
+
 END $$;

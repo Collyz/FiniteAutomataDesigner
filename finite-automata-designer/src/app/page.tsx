@@ -1,4 +1,3 @@
-//import Link from "next/link"
 import EditorButton from "./components/home/EditorButton";
 
 export default function Home() {
@@ -29,6 +28,12 @@ export default function Home() {
               type="NDFSM"
             />
           {/* </Link> */}
+
+          {/* Button for the draw-only page */}
+          <EditorButton
+            type="DRAW"
+            label="Draw Only"
+          />
         </div>
       </div>
     </main>
